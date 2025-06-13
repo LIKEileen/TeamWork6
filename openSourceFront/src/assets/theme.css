@@ -1,0 +1,25 @@
+/* 日间模式（默认） */
+[data-theme="light"] {
+  --bg-color: #ffffff;
+  --text-color: #333333;
+  --primary-color: #4a90e2;
+  --card-bg: #ffffff;
+  --el-color-primary: #409EFF;
+
+  --input-bg: #f7f7f7; /* 输入框背景色 */
+  --input-text-color: #333; /* 输入框文字颜色 */
+  --input-border-color: #e1e1e1; /* 输入框边框颜色 */
+}
+
+/* 夜间模式 */
+[data-theme="dark"] {
+  --bg-color: #121212;
+  --text-color: #dddddd;
+  --primary-color: #90caf9;
+  --card-bg: #1e1e1e;
+  --el-color-primary: #90caf9;
+
+  --input-bg: #333; /* 输入框背景色 */
+  --input-text-color: #ddd; /* 输入框文字颜色 */
+  --input-border-color: #444; /* 输入框边框颜色 */
+}
