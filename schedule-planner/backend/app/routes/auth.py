@@ -91,8 +91,6 @@ def register():
         
         print(f"Processing registration for: nickname={nickname}, phone={phone}, email={email}")
         
-        # 额外验证...（保持之前的验证代码）
-        
         try:
             user_data, message = register_user(
                 phone=phone.strip(), 

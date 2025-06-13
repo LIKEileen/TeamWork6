@@ -41,10 +41,20 @@ def init_db():
         )
     ''')
     
+    # 创建token黑名单表
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS token_blacklist (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            token TEXT UNIQUE NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
     # 创建索引提高查询性能
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone)')
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)')
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_verification_email ON verification_codes(email)')
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_token_blacklist ON token_blacklist(token)')
     
     conn.commit()
     conn.close()

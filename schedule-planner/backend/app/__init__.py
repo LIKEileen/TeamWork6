@@ -2,7 +2,7 @@ from flask import Flask, send_from_directory
 from flask_cors import CORS
 from app.routes.auth import auth_bp
 from app.routes.schedule import schedule_bp
-from app.routes.user import user_bp  # 新增
+from app.routes.user import user_bp
 from app.config import Config
 import logging
 import os
@@ -21,7 +21,23 @@ CORS(app)
 @app.route('/uploads/avatars/<filename>')
 def uploaded_avatar(filename):
     """提供头像文件访问"""
-    return send_from_directory('uploads/avatars', filename)
+    upload_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'uploads', 'avatars')
+    return send_from_directory(upload_path, filename)
+
+# 添加错误处理
+@app.errorhandler(404)
+def not_found(error):
+    return {
+        'code': 0,
+        'message': '请求的资源不存在'
+    }, 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return {
+        'code': 0,
+        'message': '服务器内部错误'
+    }, 500
 
 # 添加根路径路由
 @app.route('/')
@@ -45,7 +61,8 @@ def home():
                 'add_recurring': '/api/user/schedule/add/recurring',
                 'delete_event': '/api/user/schedule/delete',
                 'import_excel': '/api/user/schedule/import/excel',
-                'import_school': '/api/user/schedule/import/school'
+                'import_school': '/api/user/schedule/import/school',
+                'check_conflict': '/api/user/schedule/check-conflict'
             },
             'user': {
                 'update': '/api/user/update',
@@ -59,10 +76,13 @@ def home():
 # 注册蓝图
 app.register_blueprint(auth_bp, url_prefix='/api')
 app.register_blueprint(schedule_bp, url_prefix='/api')
-app.register_blueprint(user_bp, url_prefix='/api')  # 新增
+app.register_blueprint(user_bp, url_prefix='/api')
 
 # 初始化数据库（应用启动时执行一次）
 from app.models.user import init_db
 from app.models.schedule import init_schedule_db
-init_db()
-init_schedule_db()
+
+# 在应用上下文中初始化数据库
+with app.app_context():
+    init_db()
+    init_schedule_db()

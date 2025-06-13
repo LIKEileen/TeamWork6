@@ -1,6 +1,6 @@
 from ..models.schedule import (
     get_user_schedules, create_schedule_event, delete_schedule_event, 
-    create_recurring_event, init_schedule_db
+    create_recurring_event, init_schedule_db, check_time_conflict
 )
 from ..services.auth_service import verify_token
 import pandas as pd
@@ -207,14 +207,27 @@ def import_excel_schedule(token, file_path):
 
 def check_schedule_conflict(token, date, start, end, exclude_event_id=None):
     """检查日程冲突"""
-    from ..models.schedule import check_time_conflict
-    
     # 验证token
     payload = verify_token(token)
     if not payload:
         return None, "用户未登录或 token 无效"
     
     user_id = payload['user_id']
+    
+    # 验证时间格式
+    try:
+        datetime.strptime(date, '%Y-%m-%d')
+        datetime.strptime(start, '%H:%M')
+        datetime.strptime(end, '%H:%M')
+    except ValueError:
+        return None, "日期或时间格式错误"
+    
+    # 验证时间逻辑
+    start_minutes = sum(x * int(t) for x, t in zip([60, 1], start.split(':')))
+    end_minutes = sum(x * int(t) for x, t in zip([60, 1], end.split(':')))
+    
+    if start_minutes >= end_minutes:
+        return None, "结束时间必须晚于开始时间"
     
     # 检查冲突
     conflicts = check_time_conflict(user_id, date, start, end, exclude_event_id)

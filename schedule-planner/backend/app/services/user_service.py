@@ -6,8 +6,8 @@ from werkzeug.utils import secure_filename
 from PIL import Image
 import logging
 
-# 配置文件上传
-UPLOAD_FOLDER = 'uploads/avatars'
+# 配置文件上传 - 修复路径问题
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'uploads', 'avatars')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 
@@ -155,7 +155,8 @@ def upload_avatar(token, file):
                     img.save(processed_file_path, 'JPEG', quality=85, optimize=True)
                     
                     # 删除原始文件
-                    os.remove(file_path)
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
                     
                     # 生成访问URL
                     avatar_url = f"/uploads/avatars/{processed_filename}"

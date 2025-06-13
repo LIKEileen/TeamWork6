@@ -302,7 +302,10 @@ def check_conflict():
             return jsonify({
                 'code': 0,
                 'message': message,
-                'data': []
+                'data': {
+                    'hasConflict': False,
+                    'conflicts': []
+                }
             }), 400
         
         token = data.get('token')
@@ -326,7 +329,10 @@ def check_conflict():
             return jsonify({
                 'code': 0,
                 'message': message,
-                'data': []
+                'data': {
+                    'hasConflict': False,
+                    'conflicts': []
+                }
             }), 401
             
     except Exception as e:
@@ -334,5 +340,8 @@ def check_conflict():
         return jsonify({
             'code': 0,
             'message': '服务器内部错误',
-            'data': []
+            'data': {
+                'hasConflict': False,
+                'conflicts': []
+            }
         }), 500
