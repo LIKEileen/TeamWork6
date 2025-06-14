@@ -1,5 +1,5 @@
 import sqlite3
-from passlib.hash import bcrypt
+from werkzeug.security import generate_password_hash, check_password_hash
 import datetime
 import os
 from ..config import Config
@@ -72,9 +72,9 @@ def init_db():
         conn.close()
 
 def hash_password(password):
-    """加密密码"""
+    """加密密码 - 使用 werkzeug"""
     try:
-        hashed = bcrypt.hash(password)
+        hashed = generate_password_hash(password)
         logging.debug("Password hashed successfully")
         return hashed
     except Exception as e:
@@ -82,9 +82,9 @@ def hash_password(password):
         raise e
 
 def verify_password(password, hashed):
-    """验证密码"""
+    """验证密码 - 使用 werkzeug"""
     try:
-        result = bcrypt.verify(password, hashed)
+        result = check_password_hash(hashed, password)
         logging.debug(f"Password verification result: {result}")
         return result
     except Exception as e:
@@ -169,13 +169,22 @@ def create_user(user_data):
         nickname = user_data.get('nickname')
         phone = user_data.get('phone')
         email = user_data.get('email')
-        password_hash = user_data.get('password_hash')
+        password = user_data.get('password')  # 改为原始密码
+        password_hash = user_data.get('password_hash')  # 如果已经哈希过的密码
         avatar = user_data.get('avatar', Config.DEFAULT_AVATAR_URL)
         role = user_data.get('role', 'user')
         
         # 验证必填字段
-        if not all([nickname, email, password_hash]):
-            return None, "昵称、邮箱和密码不能为空"
+        if not all([nickname, email]):
+            return None, "昵称和邮箱不能为空"
+        
+        if not password and not password_hash:
+            return None, "密码不能为空"
+        
+        # 如果传入的是原始密码，进行哈希处理
+        if password and not password_hash:
+            password_hash = generate_password_hash(password)
+            logging.debug(f"Generated password hash: {password_hash[:20]}...")
         
         # 检查邮箱是否已存在
         cursor.execute('SELECT id FROM users WHERE email = ?', (email,))
@@ -247,15 +256,29 @@ def get_user_by_phone_or_email(phone=None, email=None):
             return None
         
         user = cursor.fetchone()
-        logging.debug(f"Database query result: {dict(user) if user else None}")
-        
-        return dict(user) if user else None
+        if user:
+            user_dict = dict(user)
+            # 检查密码哈希是否有效
+            if not user_dict.get('password_hash'):
+                logging.warning(f"User {user_dict['id']} has empty password hash")
+            logging.debug(f"Database query result: {user_dict}")
+            return user_dict
+        else:
+            return None
         
     except Exception as e:
         logging.error(f"Error getting user: {str(e)}")
         return None
     finally:
         conn.close()
+
+def get_user_by_email(email):
+    """根据邮箱获取用户"""
+    return get_user_by_phone_or_email(email=email)
+
+def get_user_by_phone(phone):
+    """根据手机号获取用户"""
+    return get_user_by_phone_or_email(phone=phone)
 
 def get_user_by_id(user_id):
     """根据用户ID获取用户信息"""
@@ -300,13 +323,8 @@ def bind_phone(user_id, phone):
         conn.commit()
         
         # 获取更新后的用户信息
-        cursor.execute('''
-            SELECT id, nickname, phone, email, password_hash, avatar, role, created_at, updated_at
-            FROM users WHERE id = ?
-        ''', (user_id,))
-        
-        user = cursor.fetchone()
-        return dict(user) if user else None, "手机号绑定成功"
+        updated_user = get_user_by_id(user_id)
+        return updated_user, "手机号绑定成功"
         
     except sqlite3.IntegrityError as e:
         logging.error(f"Phone binding integrity error: {str(e)}")
@@ -328,7 +346,17 @@ def update_user_info(user_id, updates):
         values = []
         
         for key, value in updates.items():
-            if key in ['nickname', 'avatar', 'role']:
+            if key in ['nickname', 'avatar', 'role', 'phone', 'email']:
+                # 检查邮箱和手机号是否已被其他用户使用
+                if key == 'email' and value:
+                    cursor.execute('SELECT id FROM users WHERE email = ? AND id != ?', (value, user_id))
+                    if cursor.fetchone():
+                        return None, "该邮箱已被其他用户使用"
+                elif key == 'phone' and value:
+                    cursor.execute('SELECT id FROM users WHERE phone = ? AND id != ?', (value, user_id))
+                    if cursor.fetchone():
+                        return None, "该手机号已被其他用户使用"
+                
                 set_clauses.append(f"{key} = ?")
                 values.append(value)
         
@@ -362,30 +390,56 @@ def change_user_password(user_id, old_password, new_password):
     cursor = conn.cursor()
     
     try:
-        # 获取用户当前密码
+        # 获取用户当前密码哈希
         cursor.execute('SELECT password_hash FROM users WHERE id = ?', (user_id,))
         user = cursor.fetchone()
         
         if not user:
-            return False, "用户不存在"
+            return None, "用户不存在"
         
-        # 验证旧密码
-        if not bcrypt.verify(old_password, user['password_hash']):
-            return False, "原密码错误"
+        current_password_hash = user['password_hash']
+        logging.debug(f"Current password hash: {current_password_hash}")
+        
+        # 检查密码哈希是否为空
+        if not current_password_hash:
+            logging.error("Password hash is empty for user")
+            return None, "用户密码数据异常，请联系管理员"
+        
+        # 验证原密码
+        try:
+            password_valid = check_password_hash(current_password_hash, old_password)
+            logging.debug(f"Password validation result: {password_valid}")
+            
+            if not password_valid:
+                return None, "原密码错误"
+        except Exception as e:
+            logging.error(f"Password verification error: {str(e)}")
+            # 如果是旧格式的密码，尝试直接比较
+            if current_password_hash == old_password:
+                logging.info("Found plain text password, will update to hashed format")
+            else:
+                return None, "原密码错误"
+        
+        # 生成新密码哈希
+        new_password_hash = generate_password_hash(new_password)
+        logging.debug(f"New password hash generated: {new_password_hash[:20]}...")
         
         # 更新密码
-        new_password_hash = bcrypt.hash(new_password)
         cursor.execute('''
             UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP 
             WHERE id = ?
         ''', (new_password_hash, user_id))
         
+        if cursor.rowcount == 0:
+            return None, "密码更新失败"
+        
         conn.commit()
+        logging.info(f"Password changed successfully for user ID: {user_id}")
         return True, "密码修改成功"
         
     except Exception as e:
         logging.error(f"Error changing password: {str(e)}")
-        return False, f"密码修改失败: {str(e)}"
+        return None, f"修改密码失败: {str(e)}"
     finally:
         conn.close()
 

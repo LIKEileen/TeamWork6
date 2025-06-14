@@ -42,14 +42,25 @@ def register():
         email = data.get('email')
         password = data.get('password')
         
-        # 注册用户
-        user_data, message = register_user(phone, email, password, nickname)
+        # 构建用户数据
+        user_data = {
+            'nickname': nickname,
+            'email': email,
+            'password': password
+        }
         
-        if user_data:
+        # 如果提供了手机号，添加到用户数据中
+        if phone:
+            user_data['phone'] = phone
+        
+        # 注册用户 - 修复函数调用
+        user_info, message = register_user(user_data)
+        
+        if user_info:
             return jsonify({
                 'code': 1,
-                'message': message,
-                'data': user_data
+                'message': 'success',
+                'data': user_info
             })
         else:
             return jsonify({
@@ -60,9 +71,11 @@ def register():
             
     except Exception as e:
         logging.error(f"Register error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'code': 0,
-            'message': '服务器内部错误',
+            'message': f'服务器内部错误: {str(e)}',
             'data': {}
         }), 500
 
@@ -92,13 +105,27 @@ def login():
                 'data': {}
             }), 400
         
-        # 用户登录
-        user_data, message = authenticate_user(phone=phone, email=email, password=password)
+        # 确定登录标识符
+        login_identifier = email if email else phone
         
-        if user_data:
+        # 用户登录 - 修复函数调用
+        user, message = authenticate_user(login_identifier, password)
+        
+        if user:
+            # 生成token
+            from ..services.auth_service import generate_token, format_user_response
+            token = generate_token(user)
+            if not token:
+                return jsonify({
+                    'code': 0,
+                    'message': '生成token失败',
+                    'data': {}
+                }), 500
+            
+            user_data = format_user_response(user, token)
             return jsonify({
                 'code': 1,
-                'message': message,
+                'message': 'success',
                 'data': user_data
             })
         else:
@@ -110,9 +137,11 @@ def login():
             
     except Exception as e:
         logging.error(f"Login error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'code': 0,
-            'message': '服务器内部错误',
+            'message': f'服务器内部错误: {str(e)}',
             'data': {}
         }), 500
 

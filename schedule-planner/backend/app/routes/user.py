@@ -1,5 +1,11 @@
 from flask import Blueprint, request, jsonify
-from ..services.user_service import update_user_profile, change_password, upload_avatar, get_user_profile
+from ..services.user_service import (
+    get_user_profile, 
+    update_user_profile, 
+    change_password_service, 
+    bind_phone_service, 
+    upload_avatar
+)
 import logging
 
 user_bp = Blueprint('user', __name__)
@@ -56,8 +62,8 @@ def update_user():
         }), 500
 
 @user_bp.route('/user/change-password', methods=['POST'])
-def change_user_password():
-    """修改密码"""
+def change_password():
+    """修改用户密码"""
     try:
         data = request.get_json()
         
@@ -73,9 +79,9 @@ def change_user_password():
         old_password = data.get('oldPassword')
         new_password = data.get('newPassword')
         
-        success, message = change_password(token, old_password, new_password)
+        result, message = change_password_service(token, old_password, new_password)
         
-        if success:
+        if result:
             return jsonify({
                 'code': 1,
                 'message': message
@@ -167,6 +173,44 @@ def get_user_info():
             
     except Exception as e:
         logging.error(f"Get user profile error: {str(e)}")
+        return jsonify({
+            'code': 0,
+            'message': '服务器内部错误'
+        }), 500
+
+@user_bp.route('/user/bind-phone', methods=['POST'])
+def bind_phone_route():
+    """绑定手机号"""
+    try:
+        data = request.get_json()
+        
+        # 验证必填字段
+        valid, message = validate_request_data(data, ['token', 'phone'])
+        if not valid:
+            return jsonify({
+                'code': 0,
+                'message': message
+            }), 400
+        
+        token = data.get('token')
+        phone = data.get('phone')
+        verification_code = data.get('verificationCode', '')
+        
+        result, message = bind_phone_service(token, phone, verification_code)
+        
+        if result:
+            return jsonify({
+                'code': 1,
+                'message': message
+            })
+        else:
+            return jsonify({
+                'code': 0,
+                'message': message
+            }), 400
+            
+    except Exception as e:
+        logging.error(f"Bind phone error: {str(e)}")
         return jsonify({
             'code': 0,
             'message': '服务器内部错误'

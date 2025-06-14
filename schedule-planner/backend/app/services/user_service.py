@@ -1,9 +1,19 @@
-from ..models.user import update_user_info, change_user_password, update_user_avatar, get_user_by_id
+from ..models.user import (
+    update_user_info, 
+    change_user_password, 
+    update_user_avatar, 
+    get_user_by_id,
+    get_user_by_email, 
+    get_user_by_phone, 
+    bind_phone
+)
 from ..services.auth_service import verify_token
 from ..config import Config
 import os
 import uuid
 from werkzeug.utils import secure_filename
+import re
+import logging
 
 def get_user_profile(token):
     """获取用户档案信息"""
@@ -35,10 +45,10 @@ def get_user_profile(token):
         return user_profile, "获取用户信息成功"
         
     except Exception as e:
-        print(f"Error getting user profile: {str(e)}")
+        logging.error(f"Error getting user profile: {str(e)}")
         return None, f"获取用户信息失败: {str(e)}"
 
-def update_user_profile(token, nickname=None, avatar=None):
+def update_user_profile(token, nickname=None, phone=None, email=None):
     """更新用户档案信息"""
     try:
         # 验证token
@@ -52,8 +62,16 @@ def update_user_profile(token, nickname=None, avatar=None):
         updates = {}
         if nickname:
             updates['nickname'] = nickname
-        if avatar:
-            updates['avatar'] = avatar
+        if phone:
+            # 验证手机号格式
+            if not re.match(r'^1[3-9]\d{9}$', phone):
+                return None, "手机号格式不正确"
+            updates['phone'] = phone
+        if email:
+            # 验证邮箱格式
+            if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+                return None, "邮箱格式不正确"
+            updates['email'] = email
         
         if not updates:
             return None, "没有可更新的信息"
@@ -65,41 +83,67 @@ def update_user_profile(token, nickname=None, avatar=None):
         
         # 格式化返回数据
         user_profile = {
-            'id': updated_user['id'],
             'nickname': updated_user['nickname'],
             'phone': updated_user.get('phone'),
             'email': updated_user['email'],
             'avatar': updated_user.get('avatar') or Config.DEFAULT_AVATAR_URL,
-            'role': updated_user.get('role', 'user')
         }
         
         return user_profile, "用户信息更新成功"
         
     except Exception as e:
-        print(f"Error updating user profile: {str(e)}")
+        logging.error(f"Error updating user profile: {str(e)}")
         return None, f"更新用户信息失败: {str(e)}"
 
-def change_password(token, old_password, new_password):
-    """修改用户密码"""
+def change_password_service(token, old_password, new_password):
+    """修改密码服务"""
     try:
         # 验证token
         payload = verify_token(token)
         if not payload:
-            return False, "用户未登录或 token 无效"
+            return None, "用户未登录或 token 无效"
         
         user_id = payload['user_id']
         
-        # 验证密码格式
-        if not new_password or len(new_password) < 6:
-            return False, "新密码长度至少6位"
+        # 验证新密码格式
+        if len(new_password) < 6:
+            return None, "新密码长度至少为6位"
         
-        # 修改密码
-        success, message = change_user_password(user_id, old_password, new_password)
-        return success, message
+        # 调用模型层修改密码
+        result, message = change_user_password(user_id, old_password, new_password)
+        return result, message
         
     except Exception as e:
-        print(f"Error changing password: {str(e)}")
-        return False, f"密码修改失败: {str(e)}"
+        logging.error(f"Error changing password: {str(e)}")
+        return None, f"修改密码失败: {str(e)}"
+
+def bind_phone_service(token, phone, verification_code):
+    """绑定手机号服务"""
+    try:
+        # 验证token
+        payload = verify_token(token)
+        if not payload:
+            return None, "用户未登录或 token 无效"
+        
+        user_id = payload['user_id']
+        
+        # 验证手机号格式
+        if not re.match(r'^1[3-9]\d{9}$', phone):
+            return None, "手机号格式不正确"
+        
+        # 这里应该验证验证码，暂时跳过
+        # TODO: 实现手机验证码验证逻辑
+        
+        # 绑定手机号
+        updated_user, message = bind_phone(user_id, phone)
+        if not updated_user:
+            return None, message
+        
+        return True, message
+        
+    except Exception as e:
+        logging.error(f"Error binding phone: {str(e)}")
+        return None, f"绑定手机号失败: {str(e)}"
 
 def upload_avatar(token, file):
     """上传用户头像"""
@@ -151,12 +195,11 @@ def upload_avatar(token, file):
         return avatar_url, "头像上传成功"
         
     except Exception as e:
-        print(f"Error uploading avatar: {str(e)}")
+        logging.error(f"Error uploading avatar: {str(e)}")
         return None, f"头像上传失败: {str(e)}"
 
 def validate_phone_format(phone):
     """验证手机号格式"""
-    import re
     if not phone:
         return False
     
@@ -166,7 +209,6 @@ def validate_phone_format(phone):
 
 def validate_email_format(email):
     """验证邮箱格式"""
-    import re
     if not email:
         return False
     
@@ -194,7 +236,7 @@ def get_user_statistics(user_id):
         return stats, "获取统计信息成功"
         
     except Exception as e:
-        print(f"Error getting user statistics: {str(e)}")
+        logging.error(f"Error getting user statistics: {str(e)}")
         return None, f"获取统计信息失败: {str(e)}"
 
 def calculate_profile_completion(user):
@@ -218,5 +260,5 @@ def calculate_profile_completion(user):
         return round(completion_rate, 1)
         
     except Exception as e:
-        print(f"Error calculating profile completion: {str(e)}")
+        logging.error(f"Error calculating profile completion: {str(e)}")
         return 0.0
