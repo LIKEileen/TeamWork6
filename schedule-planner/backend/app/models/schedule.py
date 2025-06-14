@@ -190,14 +190,15 @@ def delete_schedule_event(user_id, event_id):
     cursor = conn.cursor()
     
     try:
-        # 检查事件是否属于该用户
+        # 首先检查事件是否存在且属于该用户
         cursor.execute('''
             SELECT id FROM schedule_events 
             WHERE id = ? AND user_id = ?
         ''', (event_id, user_id))
         
-        if not cursor.fetchone():
-            return False, "事件不存在或无权限"
+        event = cursor.fetchone()
+        if not event:
+            return False, "事件不存在或无权限删除"
         
         # 删除事件
         cursor.execute('''
@@ -205,9 +206,12 @@ def delete_schedule_event(user_id, event_id):
             WHERE id = ? AND user_id = ?
         ''', (event_id, user_id))
         
-        conn.commit()
-        return True, "删除成功"
-        
+        if cursor.rowcount > 0:
+            conn.commit()
+            return True, "删除成功"
+        else:
+            return False, "删除失败"
+            
     except Exception as e:
         print(f"Error deleting schedule event: {str(e)}")
         return False, f"删除失败: {str(e)}"

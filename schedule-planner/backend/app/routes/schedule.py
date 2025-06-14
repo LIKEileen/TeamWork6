@@ -23,11 +23,11 @@ def allowed_file(filename):
 def validate_request_data(data, required_fields):
     """验证请求数据"""
     if not data:
-        return False, "请求数据不能为空"
+        return False, "请求体不能为空"
     
-    missing_fields = [field for field in required_fields if not data.get(field)]
-    if missing_fields:
-        return False, f"缺少必填字段: {', '.join(missing_fields)}"
+    for field in required_fields:
+        if field not in data or data[field] is None or str(data[field]).strip() == '':
+            return False, f"缺少必填字段: {field}"
     
     return True, "验证通过"
 
@@ -101,7 +101,7 @@ def add_schedule_event():
         if event:
             return jsonify({
                 'code': 1,
-                'message': message,
+                'message': 'success',
                 'data': event
             })
         else:
@@ -148,7 +148,7 @@ def add_recurring_event():
         if success:
             return jsonify({
                 'code': 1,
-                'message': message
+                'message': 'success'
             })
         else:
             return jsonify({
@@ -185,7 +185,7 @@ def delete_schedule_event():
         if success:
             return jsonify({
                 'code': 1,
-                'message': message
+                'message': 'success'
             })
         else:
             return jsonify({
@@ -195,96 +195,6 @@ def delete_schedule_event():
             
     except Exception as e:
         logging.error(f"Delete schedule event error: {str(e)}")
-        return jsonify({
-            'code': 0,
-            'message': '服务器内部错误'
-        }), 500
-
-@schedule_bp.route('/user/schedule/import/excel', methods=['POST'])
-def import_excel_schedule_route():
-    """导入Excel课表"""
-    try:
-        # 验证token
-        token = request.form.get('token')
-        if not token:
-            return jsonify({
-                'code': 0,
-                'message': 'token不能为空'
-            }), 400
-        
-        # 检查文件
-        if 'file' not in request.files:
-            return jsonify({
-                'code': 0,
-                'message': '没有选择文件'
-            }), 400
-        
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({
-                'code': 0,
-                'message': '没有选择文件'
-            }), 400
-        
-        if file and allowed_file(file.filename):
-            # 确保上传目录存在
-            os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-            
-            # 生成唯一文件名
-            filename = f"{uuid.uuid4()}_{secure_filename(file.filename)}"
-            file_path = os.path.join(UPLOAD_FOLDER, filename)
-            
-            # 保存文件
-            file.save(file_path)
-            
-            # 导入数据
-            success, message = import_excel_schedule(token, file_path)
-            
-            if success:
-                return jsonify({
-                    'code': 1,
-                    'message': message
-                })
-            else:
-                return jsonify({
-                    'code': 0,
-                    'message': message
-                }), 400
-        else:
-            return jsonify({
-                'code': 0,
-                'message': '不支持的文件格式，请上传.xlsx或.xls文件'
-            }), 400
-            
-    except Exception as e:
-        logging.error(f"Import excel schedule error: {str(e)}")
-        return jsonify({
-            'code': 0,
-            'message': '服务器内部错误'
-        }), 500
-
-@schedule_bp.route('/user/schedule/import/school', methods=['POST'])
-def import_school_schedule():
-    """导入学校课表（暂未实现）"""
-    try:
-        data = request.get_json()
-        
-        # 验证必填字段
-        valid, message = validate_request_data(data, ['token', 'school'])
-        if not valid:
-            return jsonify({
-                'code': 0,
-                'message': message
-            }), 400
-        
-        # TODO: 实现学校课表导入逻辑
-        return jsonify({
-            'code': 0,
-            'message': '功能开发中，敬请期待'
-        }), 501
-        
-    except Exception as e:
-        logging.error(f"Import school schedule error: {str(e)}")
         return jsonify({
             'code': 0,
             'message': '服务器内部错误'
@@ -333,7 +243,7 @@ def check_conflict():
                     'hasConflict': False,
                     'conflicts': []
                 }
-            }), 401
+            }), 400
             
     except Exception as e:
         logging.error(f"Check conflict error: {str(e)}")
@@ -345,5 +255,73 @@ def check_conflict():
                 'conflicts': []
             }
         }), 500
-    
-    
+
+@schedule_bp.route('/user/schedule/import/excel', methods=['POST'])
+def import_excel():
+    """导入Excel课表"""
+    try:
+        # 检查是否有文件上传
+        if 'file' not in request.files:
+            return jsonify({
+                'code': 0,
+                'message': '请选择要上传的Excel文件'
+            }), 400
+        
+        file = request.files['file']
+        token = request.form.get('token')
+        
+        # 验证token
+        if not token:
+            return jsonify({
+                'code': 0,
+                'message': '缺少用户token'
+            }), 400
+        
+        # 验证文件
+        if file.filename == '':
+            return jsonify({
+                'code': 0,
+                'message': '请选择要上传的文件'
+            }), 400
+        
+        if not allowed_file(file.filename):
+            return jsonify({
+                'code': 0,
+                'message': '只支持 .xlsx 和 .xls 格式的Excel文件'
+            }), 400
+        
+        # 生成安全的文件名
+        filename = secure_filename(file.filename)
+        file_extension = filename.rsplit('.', 1)[1].lower()
+        unique_filename = f"{uuid.uuid4().hex}.{file_extension}"
+        
+        # 确保上传目录存在
+        upload_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'uploads')
+        if not os.path.exists(upload_folder):
+            os.makedirs(upload_folder)
+        
+        # 保存文件
+        file_path = os.path.join(upload_folder, unique_filename)
+        file.save(file_path)
+        
+        # 调用导入服务
+        success, message = import_excel_schedule(token, file_path)
+        
+        if success:
+            return jsonify({
+                'code': 1,
+                'message': message
+            })
+        else:
+            return jsonify({
+                'code': 0,
+                'message': message
+            }), 400
+            
+    except Exception as e:
+        logging.error(f"Import Excel error: {str(e)}")
+        return jsonify({
+            'code': 0,
+            'message': f'导入失败: {str(e)}'
+        }), 500
+
