@@ -1,9 +1,5 @@
 from flask import Flask, send_from_directory
 from flask_cors import CORS
-from app.routes.auth import auth_bp
-from app.routes.schedule import schedule_bp
-from app.routes.user import user_bp
-from app.routes.upload import upload_bp
 from app.config import Config
 import logging
 import os
@@ -108,16 +104,17 @@ def create_app():
         }
     
     # 注册蓝图
-    app.register_blueprint(auth_bp, url_prefix='/api')
-    app.register_blueprint(schedule_bp, url_prefix='/api')
-    app.register_blueprint(user_bp, url_prefix='/api')
+    from .routes.auth import auth_bp
+    from .routes.user import user_bp
+    from .routes.schedule import schedule_bp
+    from .routes.meeting import meeting_bp
+    from .routes.upload import upload_bp  # 新增
     
-    # 注册上传蓝图（如果存在）
-    try:
-        app.register_blueprint(upload_bp, url_prefix='/api')
-        logging.info("Upload blueprint registered")
-    except Exception as e:
-        logging.warning(f"Upload blueprint not registered: {str(e)}")
+    app.register_blueprint(auth_bp, url_prefix='/api')
+    app.register_blueprint(user_bp, url_prefix='/api')
+    app.register_blueprint(schedule_bp, url_prefix='/api')
+    app.register_blueprint(meeting_bp, url_prefix='/api')
+    app.register_blueprint(upload_bp)  # 注册上传蓝图，不需要前缀
     
     # 初始化数据库（应用启动时执行一次）
     with app.app_context():

@@ -4,7 +4,8 @@ from ..services.user_service import (
     update_user_profile, 
     change_password_service, 
     bind_phone_service, 
-    upload_avatar
+    upload_avatar,
+    update_qq_avatar_service
 )
 import logging
 
@@ -125,7 +126,7 @@ def upload_user_avatar():
         if avatar_url:
             return jsonify({
                 'code': 1,
-                'message': message,
+                'message': '头像上传成功',
                 'avatarUrl': avatar_url
             })
         else:
@@ -136,6 +137,51 @@ def upload_user_avatar():
             
     except Exception as e:
         logging.error(f"Upload avatar error: {str(e)}")
+        return jsonify({
+            'code': 0,
+            'message': '服务器内部错误'
+        }), 500
+
+@user_bp.route('/user/avatar/qq', methods=['POST'])
+def update_qq_avatar():
+    """使用QQ头像"""
+    try:
+        data = request.get_json()
+        
+        # 验证必填字段
+        valid, message = validate_request_data(data, ['token', 'avatar'])
+        if not valid:
+            return jsonify({
+                'code': 0,
+                'message': message
+            }), 400
+        
+        token = data.get('token')
+        avatar_url = data.get('avatar')
+        
+        # 验证QQ头像URL格式
+        if not avatar_url.startswith(('http://', 'https://')):
+            return jsonify({
+                'code': 0,
+                'message': 'QQ头像链接格式不正确'
+            }), 400
+        
+        result, message = update_qq_avatar_service(token, avatar_url)
+        
+        if result:
+            return jsonify({
+                'code': 1,
+                'message': 'QQ头像已更新',
+                'avatarUrl': avatar_url
+            })
+        else:
+            return jsonify({
+                'code': 0,
+                'message': message
+            }), 400
+            
+    except Exception as e:
+        logging.error(f"Update QQ avatar error: {str(e)}")
         return jsonify({
             'code': 0,
             'message': '服务器内部错误'

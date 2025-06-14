@@ -7,6 +7,7 @@ from ..models.user import (
     get_user_by_phone, 
     bind_phone
 )
+
 from ..services.auth_service import verify_token
 from ..config import Config
 import os
@@ -160,18 +161,26 @@ def upload_avatar(token, file):
             return None, "请选择要上传的文件"
         
         # 检查文件类型
-        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
         if not ('.' in file.filename and 
                 file.filename.rsplit('.', 1)[1].lower() in allowed_extensions):
-            return None, "只支持 PNG、JPG、JPEG、GIF 格式的图片"
+            return None, "只支持 PNG、JPG、JPEG、GIF、WEBP 格式的图片"
+        
+        # 检查文件大小 (最大 5MB)
+        file.seek(0, os.SEEK_END)
+        file_size = file.tell()
+        file.seek(0)  # 重置文件指针
+        
+        if file_size > 5 * 1024 * 1024:  # 5MB
+            return None, "文件大小不能超过5MB"
         
         # 生成安全的文件名
         filename = secure_filename(file.filename)
         file_extension = filename.rsplit('.', 1)[1].lower()
-        unique_filename = f"{uuid.uuid4().hex}.{file_extension}"
+        unique_filename = f"avatar_{user_id}_{uuid.uuid4().hex[:8]}.{file_extension}"
         
         # 确保上传目录存在
-        upload_folder = getattr(Config, 'UPLOAD_FOLDER', 'uploads')
+        upload_folder = os.path.join('uploads', 'avatars')
         if not os.path.exists(upload_folder):
             os.makedirs(upload_folder)
         
@@ -180,7 +189,7 @@ def upload_avatar(token, file):
         file.save(file_path)
         
         # 生成访问URL
-        avatar_url = f"/uploads/{unique_filename}"
+        avatar_url = f"/uploads/avatars/{unique_filename}"
         
         # 更新用户头像
         updated_user, message = update_user_avatar(user_id, avatar_url)
@@ -197,6 +206,51 @@ def upload_avatar(token, file):
     except Exception as e:
         logging.error(f"Error uploading avatar: {str(e)}")
         return None, f"头像上传失败: {str(e)}"
+
+def update_qq_avatar_service(token, avatar_url):
+    """使用QQ头像服务"""
+    try:
+        # 验证token
+        payload = verify_token(token)
+        if not payload:
+            return None, "用户未登录或 token 无效"
+        
+        user_id = payload['user_id']
+        
+        # 验证QQ头像URL格式
+        import re
+        qq_avatar_pattern = r'^https?://(q\.qlogo\.cn|qlogo\.cn)'
+        if not re.match(qq_avatar_pattern, avatar_url):
+            # 允许其他有效的头像URL格式
+            if not avatar_url.startswith(('http://', 'https://')):
+                return None, "头像链接格式不正确"
+        
+        # 验证URL是否可访问
+        try:
+            import requests
+            response = requests.head(avatar_url, timeout=10)
+            if response.status_code not in [200, 302]:
+                return None, "头像链接无法访问"
+            
+            # 检查是否为图片类型
+            content_type = response.headers.get('content-type', '')
+            if not content_type.startswith('image/'):
+                return None, "链接不是有效的图片"
+                
+        except requests.RequestException:
+            # 如果无法验证，仍然允许保存（可能是防盗链等原因）
+            logging.warning(f"Cannot verify avatar URL: {avatar_url}")
+        
+        # 更新用户头像
+        updated_user, message = update_user_avatar(user_id, avatar_url)
+        if not updated_user:
+            return None, message
+        
+        return True, "QQ头像已更新"
+        
+    except Exception as e:
+        logging.error(f"Error updating QQ avatar: {str(e)}")
+        return None, f"更新QQ头像失败: {str(e)}"
 
 def validate_phone_format(phone):
     """验证手机号格式"""
