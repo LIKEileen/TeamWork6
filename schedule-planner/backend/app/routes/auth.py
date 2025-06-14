@@ -1,3 +1,4 @@
+# Author: 唐震
 from flask import Blueprint, request, jsonify
 from ..services.auth_service import authenticate_user, register_user, bind_user_phone, logout_user
 from ..services.verification_service import send_verification_code, reset_user_password

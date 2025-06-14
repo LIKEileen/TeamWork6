@@ -1,3 +1,4 @@
+# Author: 唐震
 import smtplib
 import random
 import string

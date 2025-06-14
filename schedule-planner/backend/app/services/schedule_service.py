@@ -1,3 +1,4 @@
+# Author: 唐震
 from ..models.schedule import (
     get_user_schedules, create_schedule_event, delete_schedule_event, 
     create_recurring_event, init_schedule_db, check_time_conflict
