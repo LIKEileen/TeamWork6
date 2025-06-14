@@ -23,6 +23,6 @@ class Config:
         'smtp_server': 'smtp.qq.com',  # QQ邮箱
         'smtp_port': 587,
         'sender_email': '3426411644@qq.com',  # 替换为真实邮箱
-        'sender_password': 'cpxyeidnescddcaj',   # 不是QQ密码，是授权码！
+        'sender_password': 'rvmqpwlsurfwdbaj',   # 不是QQ密码，是授权码！
         'sender_name': 'Schedule Planner'
     }
