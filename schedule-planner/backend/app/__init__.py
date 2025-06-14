@@ -108,13 +108,15 @@ def create_app():
     from .routes.user import user_bp
     from .routes.schedule import schedule_bp
     from .routes.meeting import meeting_bp
-    from .routes.upload import upload_bp  # 新增
+    from .routes.upload import upload_bp
+    from .routes.organization import organization_bp  # 新增组织路由
     
     app.register_blueprint(auth_bp, url_prefix='/api')
     app.register_blueprint(user_bp, url_prefix='/api')
     app.register_blueprint(schedule_bp, url_prefix='/api')
     app.register_blueprint(meeting_bp, url_prefix='/api')
-    app.register_blueprint(upload_bp)  # 注册上传蓝图，不需要前缀
+    app.register_blueprint(upload_bp, url_prefix='/api')
+    app.register_blueprint(organization_bp, url_prefix='/api')  # 注册组织路由
     
     # 初始化数据库（应用启动时执行一次）
     with app.app_context():
@@ -131,6 +133,13 @@ def create_app():
             logging.info("Schedule database initialized")
         except Exception as e:
             logging.error(f"Failed to initialize schedule database: {str(e)}")
+        
+        try:
+            from app.models.organization import init_organization_db  # 新增组织数据库初始化
+            init_organization_db()
+            logging.info("Organization database initialized")
+        except Exception as e:
+            logging.error(f"Failed to initialize organization database: {str(e)}")
     
     return app
 
