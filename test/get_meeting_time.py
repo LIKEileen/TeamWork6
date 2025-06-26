@@ -117,7 +117,7 @@ def get_meeting_time(
 
 if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    timetable_path = os.path.join(base_dir, "demo_data", "CP5SQ0gV.xlsx")
+    timetable_path = os.path.join(base_dir, "demo_timetable", "CP5SQ0gV.xlsx")
     timetable = pd.read_excel(timetable_path)
     schedule = extract_schedule_from_excel(timetable)
 

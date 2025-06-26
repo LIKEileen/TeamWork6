@@ -70,7 +70,7 @@ def get_user_schedules(user_id, start_date=None, end_date=None):
                 FROM schedule_events 
                 WHERE user_id = ? AND day BETWEEN ? AND ?
                 ORDER BY day, start_time
-            ''', (user_id, start_date, end_date))
+            ''', (user_id, start_date.isoformat(), end_date.isoformat()))
         else:
             cursor.execute('''
                 SELECT id, title, day, start_time as start, end_time as end, color
@@ -90,6 +90,9 @@ def get_user_schedules(user_id, start_date=None, end_date=None):
 
 def check_time_conflict(user_id, day, start_time, end_time, exclude_event_id=None):
     """检查时间冲突"""
+    if isinstance(day, datetime.date):
+        day = day.isoformat()
+
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -148,6 +151,8 @@ def check_time_conflict(user_id, day, start_time, end_time, exclude_event_id=Non
 
 def create_schedule_event(user_id, title, day, start_time, end_time, color='#409EFF', force_create=False):
     """创建单个日程事件（添加冲突检测）"""
+    if isinstance(day, datetime.date):
+        day = day.isoformat()
     
     # 检查时间冲突（除非强制创建）
     if not force_create:

@@ -9,6 +9,46 @@ from ..models.schedule import get_user_schedules
 from .util import DAY_NAMES, merge_intervals, subtract_intervals
 
 
+def _merge_start_minutes_to_slots(
+    start_minutes: List[int], duration: int
+) -> List[Tuple[int, int]]:
+    """将连续的开始时间分钟点合并成时间段。
+
+    例如, [600, 601, 602] 和 duration=30 会合并成 (600, 632)。
+
+    Args:
+        start_minutes (List[int]): 排序后的可用开始时间分钟列表。
+        duration (int): 会议时长（分钟）。
+
+    Returns:
+        List[Tuple[int, int]]: 合并后的时间段列表 (start_minute, end_minute)。
+    """
+    if not start_minutes:
+        return []
+
+    # 确保列表是排序的
+    start_minutes.sort()
+
+    merged_slots = []
+    if not start_minutes:
+        return merged_slots
+
+    slot_start = start_minutes[0]
+    for i in range(1, len(start_minutes)):
+        if start_minutes[i] > start_minutes[i - 1] + 1:
+            # 发现不连续，结束上一个时间段
+            slot_end = start_minutes[i - 1] + duration
+            merged_slots.append((slot_start, slot_end))
+            # 开始新时间段
+            slot_start = start_minutes[i]
+
+    # 添加最后一个时间段
+    last_slot_end = start_minutes[-1] + duration
+    merged_slots.append((slot_start, last_slot_end))
+
+    return merged_slots
+
+
 def _get_remaining_work_time(
     start_date: datetime.date,
     end_date: datetime.date,
@@ -189,12 +229,13 @@ def find_meeting_times(
             meetings: List[Dict[str, Any]] = get_meetings_by_user_id(
                 user["id"], start_date, end_date
             )
+
             # 从数据库获取个人日程列表
             schedules: List[Dict[str, Any]] = get_user_schedules(
                 user["id"], start_date, end_date
             )
 
-            busy_time: dict[str, List[int]] = {}
+            busy_time: Dict[str, List[int]] = {}
 
             # 合并会议和个人日程
             all_events = meetings + schedules
@@ -213,8 +254,8 @@ def find_meeting_times(
                     busy_time[date_str].append(
                         (start.hour * 60 + start.minute, end.hour * 60 + end.minute)
                     )
-                elif "date" in event:  # 个人日程
-                    event_date = datetime.strptime(event["date"], "%Y-%m-%d").date()
+                elif "day" in event:  # 个人日程
+                    event_date = datetime.strptime(event["day"], "%Y-%m-%d").date()
                     if start_date <= event_date <= end_date:
                         date_str = str(event_date)
                         if date_str not in busy_time:
@@ -241,11 +282,9 @@ def find_meeting_times(
                 }
             )
 
-        logging.info(f"person_busy_time_list:{person_busy_time_list}")
-
         # 4. 计算每天每个人的空闲时间
         remain_time = _get_remaining_work_time(start_date, end_date)
-        everyday_free_time_list = {}
+        everyday_free_time_list: Dict[str, List] = {}
         for d_str in remain_time.keys():
             everyday_free_time_list[d_str] = []
             for person in person_busy_time_list:
@@ -271,21 +310,29 @@ def find_meeting_times(
             if not start_minutes:
                 continue
 
+            # 合并连续的开始时间点，形成更大的可用时间段
+            merged_minute_slots = _merge_start_minutes_to_slots(
+                start_minutes, duration_minutes
+            )
+
             day_date = datetime.fromisoformat(day_str).date()
             times = []
-            for minute in start_minutes:
+            for start_minute, end_minute in merged_minute_slots:
                 # 将分钟转换为datetime对象
                 start_time = datetime.combine(
-                    day_date, time(hour=minute // 60, minute=minute % 60)
+                    day_date, time(hour=start_minute // 60, minute=start_minute % 60)
                 )
-                end_time = start_time + timedelta(minutes=duration_minutes)
+                end_time = datetime.combine(
+                    day_date, time(hour=end_minute // 60, minute=end_minute % 60)
+                )
                 times.append(
                     {
                         "start_time": start_time.isoformat(),
                         "end_time": end_time.isoformat(),
                     }
                 )
-            available_meeting_times[day_str] = times
+            if times:
+                available_meeting_times[day_str] = times
 
         logging.info(f"Found {len(available_meeting_times)} suitable days")
         return available_meeting_times, "查找成功"

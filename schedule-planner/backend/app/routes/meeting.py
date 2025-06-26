@@ -1,5 +1,4 @@
 # Author: 唐震
-## 未完善 TODO
 
 from flask import Blueprint, request, jsonify
 from ..services.meeting_service import (
@@ -51,8 +50,6 @@ def find_available_time():
         if not payload:
             return jsonify({"code": 0, "message": "用户未登录或 token 无效"}), 401
 
-        start_date = None
-        end_date = None
         # 验证日期格式并转换为date对象（如果提供了）
         if start_date_str:
             try:
@@ -72,7 +69,7 @@ def find_available_time():
 
         # 查找可用时间
         available_times, message = find_meeting_times(
-            participants, key_participants, int(duration), start_date, end_date
+            participants, key_participants, int(duration), start_date_str, end_date_str
         )
 
         return jsonify(
