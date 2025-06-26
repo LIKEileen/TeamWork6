@@ -7,7 +7,6 @@
     <div class="chat-header" @mousedown.stop.prevent="startResizeOrDrag($event, 'move')">
       <span>AI 协作助手</span>
       <div class="chat-controls">
-        <el-switch v-model="useWebSearch" size="small" inline-prompt active-text="联网" inactive-text="本地" />
         <el-button link @click="$emit('close')">
           <el-icon><Close /></el-icon>
         </el-button>
@@ -19,8 +18,18 @@
           v-for="(msg, index) in chatHistory"
           :key="index"
           :class="['message', msg.role === 'user' ? 'user-message' : 'assistant-message']"
-          v-html="renderMarkdown(msg.content)"
-        ></div>
+        >
+          <div v-if="msg.type === 'file'" class="file-message-container">
+            <div class="file-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" /></svg>
+            </div>
+            <div class="file-details">
+              <div class="file-name">{{ msg.fileInfo.name }}</div>
+              <div class="file-meta">{{ msg.fileInfo.extension }} {{ (msg.fileInfo.size / 1024 / 1024).toFixed(2) }}MB</div>
+            </div>
+          </div>
+          <div v-else v-html="renderMarkdown(msg.content)"></div>
+        </div>
         <div v-if="isStreaming" class="assistant-message" v-html="renderMarkdown(streamingText)"></div>
       </div>
     </div>
@@ -62,10 +71,10 @@ const chatHistory = ref([])
 const inputText = ref('')
 const streamingText = ref('')
 const isStreaming = ref(false)
-const useWebSearch = ref(false)
+const isUploading = ref(false)
 
 const position = reactive({ top: 60, left: 300 })
-const size = reactive({ width: 500, height: 400 })
+const size = reactive({ width: 700, height: 600 })
 let dragType = null
 let startX, startY, startTop, startLeft, startWidth, startHeight
 
@@ -156,10 +165,41 @@ const sendMessage = async () => {
 const onFileUpload = (e) => {
   const file = e.target.files[0]
   if (!file) return
-  const reader = new FileReader()
-  reader.onload = () => {
-    chatHistory.value.push({ role: 'user', content: `上传了文件：${file.name}\n\n${reader.result}` })
+
+  const fileInfo = {
+    name: file.name,
+    size: file.size,
+    extension: file.name.split('.').pop()?.toUpperCase() || '',
   }
+  
+  // For non-text files, show a warning and reject the file.
+  if (!file.type.startsWith('text/') && file.type !== '') {
+    ElMessage.warning('仅支持上传可读取内容的文本文件。')
+    e.target.value = '' // Reset input to allow re-uploading the same file
+    return
+  }
+
+  isUploading.value = true
+  const reader = new FileReader()
+
+  reader.onload = () => {
+    chatHistory.value.push({
+      role: 'user',
+      type: 'file',
+      // The full content is here for the LLM to process
+      content: `The user uploaded a file named "${file.name}". The file content is:\n\n${reader.result}`,
+      fileInfo: fileInfo, // This is for display
+    })
+    isUploading.value = false
+    e.target.value = ''
+  }
+
+  reader.onerror = () => {
+    ElMessage.error('文件读取失败')
+    isUploading.value = false
+    e.target.value = ''
+  }
+
   reader.readAsText(file)
 }
 
@@ -254,7 +294,7 @@ const renderMarkdown = (text) => {
   border-radius: 10px;
   line-height: 1.5;
   word-break: break-word;
-  white-space: pre-wrap;
+  /* white-space: pre-wrap; */
   font-size: 14px;
 }
 
@@ -296,5 +336,31 @@ const renderMarkdown = (text) => {
   height: 16px;
   cursor: nwse-resize;
   background: transparent;
+}
+
+.file-message-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.file-icon {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+.file-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.file-name {
+  font-weight: 500;
+}
+
+.file-meta {
+  font-size: 0.8rem;
+  opacity: 0.8;
 }
 </style>

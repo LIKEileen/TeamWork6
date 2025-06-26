@@ -141,6 +141,13 @@ def create_app():
             logging.info("Organization database initialized")
         except Exception as e:
             logging.error(f"Failed to initialize organization database: {str(e)}")
+
+        try:
+            from app.models.meeting import init_meeting_db
+            init_meeting_db()
+            logging.info("Meeting database initialized")
+        except Exception as e:
+            logging.error(f"Failed to initialize meeting database: {str(e)}")
     
     return app
 
