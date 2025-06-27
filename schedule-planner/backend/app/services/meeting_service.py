@@ -441,7 +441,7 @@ def get_user_meetings(
         Tuple[List[Dict[str, Any]], str]: 一个元组，第一个元素是会议列表，第二个元素是消息。
     """
     try:
-        logging.info(f"Getting meetings for user: {user_id}")
+        logging.info(f"Getting meetings for user: {user_id} with date {start_date} to {end_date}")
 
         # 从数据库查询用户的会议
         meetings = get_meetings_by_user_id(user_id, start_date, end_date)

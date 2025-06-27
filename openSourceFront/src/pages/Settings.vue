@@ -76,7 +76,7 @@
         <el-tooltip effect="dark" placement="right">
           <template #content>
             在这里绑定你的大语言模型接口，例如 OpenAI 服务：<br/>
-            - base_url: 模型 API 地址<br/>
+            - base_url: 模型 API 地址，以 /v1 结尾<br/>
             - model_name: gpt-3.5-turbo 等<br/>
             - api_key: 授权密钥<br/>
             - 系统提示词: 模型初始化行为引导语

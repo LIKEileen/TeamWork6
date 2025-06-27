@@ -25,7 +25,7 @@
             </div>
             <div class="file-details">
               <div class="file-name">{{ msg.fileInfo.name }}</div>
-              <div class="file-meta">{{ msg.fileInfo.extension }} {{ (msg.fileInfo.size / 1024 / 1024).toFixed(2) }}MB</div>
+              <div class="file-meta">{{ msg.fileInfo.extension }} {{ (msg.fileInfo.size / 1024).toFixed(2) }}KB</div>
             </div>
           </div>
           <div v-else v-html="renderMarkdown(msg.content)"></div>
