@@ -10,6 +10,7 @@ from app.models.user import init_db as init_user_db
 from app.models.meeting import init_meeting_db
 from app.models.organization import init_organization_db
 from app.models.schedule import init_schedule_db
+
 # 导入所有需要被测试的蓝图
 from app.routes.auth import auth_bp
 from app.routes.meeting import meeting_bp
@@ -18,15 +19,17 @@ from app.routes.schedule import schedule_bp
 from app.routes.upload import upload_bp
 from app.routes.user import user_bp
 
+# 从service导入需要清理的mock数据函数
+from app.services.upload_service import clear_mock_schedules
+
 @pytest.fixture(scope="function")
 def setup_databases(monkeypatch):
     """
     一个全面的 Fixture，用于设置所有需要的内存数据库。
-    - 创建独立的内存数据库用于用户/会议/日程和组织。
-    - Monkeypatch 所有 get_db_connection 函数以使用这些内存数据库。
-    - 初始化所有表结构。
-    - 填充所有虚拟数据。
-    - 在每次测试后清理。
+    - 创建独立的内存数据库。
+    - Monkeypatch 所有数据库连接函数以使用这些内存数据库。
+    - 初始化所有表结构并填充虚拟数据。
+    - 在每次测试后自动清理。
     """
     # 1. 创建独立的内存数据库连接
     main_db_conn = sqlite3.connect(":memory:")
@@ -49,8 +52,8 @@ def setup_databases(monkeypatch):
     monkeypatch.setattr("app.services.organization_service.get_db_connection", lambda: org_db_conn)
     monkeypatch.setattr("app.services.organization_service.get_user_db_connection", lambda: main_db_conn)
     monkeypatch.setattr("app.services.schedule_service.get_db_connection", lambda: main_db_conn)
-    monkeypatch.setattr("app.services.upload_service.get_db_connection", lambda: main_db_conn)
     monkeypatch.setattr("app.services.user_service.get_db_connection", lambda: main_db_conn)
+    monkeypatch.setattr("app.services.upload_service.verify_token", lambda token: {'user_id': 1} if token == "valid_token" else None)
 
     # 3. 初始化所有数据库表
     init_user_db()
@@ -58,7 +61,7 @@ def setup_databases(monkeypatch):
     init_organization_db()
     init_schedule_db()
 
-    # 4. 填充虚拟数据
+    # 4. 填充所有虚拟数据
     main_cursor = main_db_conn.cursor()
     org_cursor = org_db_conn.cursor()
 
@@ -79,12 +82,9 @@ def setup_databases(monkeypatch):
     main_cursor.executemany("INSERT INTO schedule_events (id, user_id, title, day, start_time, end_time, color) VALUES (?, ?, ?, ?, ?, ?, ?)", schedule_events_to_add)
 
     # 填充会议数据
-    meetings_to_add = [
-        (1, 'Past Meeting', 'A meeting in the past', '2025-01-10 10:00:00', '2025-01-10 11:00:00', 1, 2),
-    ]
+    meetings_to_add = [ (1, 'Past Meeting', 'A meeting in the past', '2025-01-10 10:00:00', '2025-01-10 11:00:00', 1, 2) ]
     main_cursor.executemany("INSERT INTO meetings (id, title, description, start_time, end_time, creator_id, min_participants) VALUES (?, ?, ?, ?, ?, ?, ?)", meetings_to_add)
     
-    # 填充会议参与者数据
     participants_to_add = [(1, 1, 'accepted', True), (1, 2, 'pending', False)]
     main_cursor.executemany("INSERT INTO meeting_participants (meeting_id, user_id, status, is_key_member) VALUES (?, ?, ?, ?)", participants_to_add)
     main_db_conn.commit()
@@ -93,7 +93,6 @@ def setup_databases(monkeypatch):
     orgs_to_add = [('org_1', 'Test Org One', '1')]
     org_cursor.executemany("INSERT INTO organizations (id, name, creator_id) VALUES (?, ?, ?)", orgs_to_add)
     
-    # 填充组织成员数据
     members_to_add = [('org_1', '1', 'creator'), ('org_1', '2', 'admin'), ('org_1', '3', '')]
     org_cursor.executemany("INSERT INTO organization_members (org_id, user_id, role) VALUES (?, ?, ?)", members_to_add)
     org_db_conn.commit()
@@ -106,7 +105,7 @@ def setup_databases(monkeypatch):
 @pytest.fixture
 def test_client(setup_databases):
     """
-    创建一个用于测试 Flask 应用的客户端。
+    创建一个用于测试 Flask 应用的客户端，并注册所有蓝图。
     """
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'my-super-secret-test-key'
@@ -126,9 +125,7 @@ def test_client(setup_databases):
 def _get_token(test_client, email, password):
     """辅助函数，用于登录并获取token。"""
     login_response = test_client.post('/auth/login', json={"email": email, "password": password})
-    # 添加一个检查，以防登录失败
-    if login_response.status_code != 200:
-        return None
+    if login_response.status_code != 200: return None
     return login_response.get_json()['data']['token']
 
 @pytest.fixture
@@ -151,3 +148,12 @@ def outsider_token(test_client):
     """为组织外成员(user 4)提供有效的JWT Token。"""
     return _get_token(test_client, 'outsider4@test.com', 'pass4')
 
+@pytest.fixture
+def authed_token(creator_token):
+    """一个通用的认证token fixture，默认使用创建者的token。"""
+    return creator_token
+
+@pytest.fixture(autouse=True)
+def clear_upload_mock():
+    """在每次测试前自动清空 upload_service 中的模拟数据。"""
+    clear_mock_schedules()
