@@ -1,7 +1,8 @@
 import request from '@/utils/request'
 import { IS_DEV } from '@/config'
 
-export const getUserOrgs = () => {
+// 获取用户的组织列表
+export const getUserOrgs = (token) => {
   if (IS_DEV) {
     // 模拟数据
     return new Promise((resolve) => {
@@ -28,9 +29,10 @@ export const getUserOrgs = () => {
       })
     })
   }
-  return request.get('/api/user/orglist')
+  return request.post('/api/user/orglist', { token })
 }
 
+// 获取组织热力图数据
 export const getOrgHeatmap = (orgId) => {
   if (IS_DEV) {
     // 模拟数据
@@ -83,42 +85,282 @@ export const getOrgHeatmap = (orgId) => {
   return request.get(`/api/heatmap/${orgId}`)
 }
 
-// 新增：设置管理员
+// 获取组织详情
+export const getOrgDetail = (orgId) => {
+  if (IS_DEV) {
+    // 模拟数据
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          "code": 1,
+          "message": "success",
+          "data": {
+            "id": orgId,
+            "name": "数据科学研究组",
+            "members": [
+              { "id": "u1", "name": "张教授", "role": "creator", "avatarUrl": null },
+              { "id": "u2", "name": "李研究员", "role": "admin", "avatarUrl": null },
+              { "id": "u3", "name": "王博士", "role": "admin", "avatarUrl": null },
+              { "id": "u4", "name": "陈同学", "role": "", "avatarUrl": null },
+              { "id": "u5", "name": "林同学", "role": "", "avatarUrl": null }
+            ]
+          }
+        })
+      }, 300)
+    })
+  }
+  return request.get(`/api/org/${orgId}`)
+}
+
+// 创建组织
+export const createOrg = (name, members = []) => {
+  if (IS_DEV) {
+    // 模拟数据
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          "code": 1,
+          "message": "组织创建成功",
+          "data": {
+            "id": "org" + Date.now(),
+            "name": name,
+            "members": [
+              { "id": "u1", "name": "当前用户", "role": "creator", "avatarUrl": null },
+              ...members.map(id => ({ "id": id, "name": `用户${id}`, "role": "", "avatarUrl": null }))
+            ]
+          }
+        })
+      }, 500)
+    })
+  }
+  return request.post('/api/org', { name, members })
+}
+
+// 更新组织名称
+export const updateOrgName = (orgId, name) => {
+  if (IS_DEV) {
+    // 模拟数据
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          "code": 1,
+          "message": "组织名称已更新",
+          "success": true
+        })
+      }, 300)
+    })
+  }
+  return request.put(`/api/org/${orgId}`, { name })
+}
+
+// 删除组织
+export const deleteOrg = (orgId) => {
+  if (IS_DEV) {
+    // 模拟数据
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          "code": 1,
+          "message": "组织已删除",
+          "success": true
+        })
+      }, 500)
+    })
+  }
+  return request.delete(`/api/org/${orgId}`)
+}
+
+// 设置管理员
 export const setOrgAdmins = (orgId, adminIds) => {
+  if (IS_DEV) {
+    // 模拟数据
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          "code": 1,
+          "message": "管理员设置成功",
+          "success": true
+        })
+      }, 400)
+    })
+  }
   return request.post(`/api/org/${orgId}/admins`, { adminIds })
 }
 
-// 新增：搜索用户
+// 搜索用户
 export const searchUsers = (query) => {
+  if (IS_DEV) {
+    // 模拟数据
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const mockUsers = [
+          { "id": "u20", "name": "张三", "avatarUrl": null },
+          { "id": "u21", "name": "李四", "avatarUrl": null },
+          { "id": "u22", "name": "王五", "avatarUrl": null },
+          { "id": "u23", "name": "赵六", "avatarUrl": null },
+          { "id": "u24", "name": "孙七", "avatarUrl": null }
+        ]
+        
+        const results = mockUsers.filter(user => 
+          user.name.includes(query) || user.id.includes(query)
+        )
+        
+        resolve({
+          "code": 1,
+          "message": "success",
+          "data": results
+        })
+      }, 300)
+    })
+  }
   return request.get('/api/users/search', { params: { q: query } })
 }
 
-// 新增：邀请成员
+// 邀请成员
 export const inviteOrgMember = (orgId, userId) => {
+  if (IS_DEV) {
+    // 模拟数据
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          "code": 1,
+          "message": "邀请已发送",
+          "success": true
+        })
+      }, 400)
+    })
+  }
   return request.post(`/api/org/${orgId}/invite`, { userId })
 }
 
-// 新增：搜索组织
+// 搜索组织
 export const searchOrg = (orgId) => {
+  if (IS_DEV) {
+    // 模拟数据
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        // 模拟根据ID查找组织
+        const mockOrgs = [
+          {
+            "id": "org1",
+            "name": "数据科学研究组",
+            "members": [
+              { "id": "u1", "name": "张教授", "role": "creator", "avatarUrl": null },
+              { "id": "u2", "name": "李研究员", "role": "admin", "avatarUrl": null }
+            ]
+          },
+          {
+            "id": "org2",
+            "name": "软件开发小组",
+            "members": [
+              { "id": "u6", "name": "刘组长", "role": "creator", "avatarUrl": null },
+              { "id": "u7", "name": "杨开发", "role": "admin", "avatarUrl": null }
+            ]
+          }
+        ]
+        
+        const foundOrg = mockOrgs.find(org => org.id === orgId)
+        
+        resolve({
+          "code": 1,
+          "message": "success",
+          "data": foundOrg || null
+        })
+      }, 300)
+    })
+  }
   return request.get(`/api/org/search`, { params: { id: orgId } })
 }
 
-// 新增：申请加入组织
+// 申请加入组织
 export const applyJoinOrg = (orgId, message) => {
+  if (IS_DEV) {
+    // 模拟数据
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          "code": 1,
+          "message": "申请已提交，等待管理员审核",
+          "success": true
+        })
+      }, 500)
+    })
+  }
   return request.post(`/api/org/join-request`, { orgId, message })
 }
 
-// 新增：获取收到的邀请
-export const getPendingInvitations = () => {
-  return request.get('/api/user/invitations')
-}
+// 获取收到的邀请
+// export const getPendingInvitations = () => {
+//   if (IS_DEV) {
+//     // 模拟数据
+//     return new Promise((resolve) => {
+//       setTimeout(() => {
+//         resolve({
+//           "code": 1,
+//           "message": "success",
+//           "data": [
+//             {
+//               "id": "inv1",
+//               "orgId": "org4",
+//               "orgName": "人工智能实验室",
+//               "inviter": "黄教授",
+//               "inviteTime": "2023-06-15T10:30:00Z",
+//               "message": "我们正在组建AI研究团队，希望你能加入我们的组织"
+//             },
+//             {
+//               "id": "inv2",
+//               "orgId": "org5",
+//               "orgName": "数据分析小组",
+//               "inviter": "赵分析师",
+//               "inviteTime": "2023-06-15T15:45:00Z",
+//               "message": ""
+//             },
+//             {
+//               "id": "inv3",
+//               "orgId": "org6",
+//               "orgName": "前端开发团队",
+//               "inviter": "李工程师",
+//               "inviteTime": "2023-06-16T12:15:00Z",
+//               "message": "看到你有Vue的经验，想邀请你加入我们的前端团队"
+//             }
+//           ]
+//         })
+//       }, 300)
+//     })
+//   }
+//   return request.get('/api/user/invitations')
+// }
 
-// 新增：接受组织邀请
+// 接受组织邀请
 export const acceptInvitation = (invitationId) => {
+  if (IS_DEV) {
+    // 模拟数据
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          "code": 1,
+          "message": "已加入组织",
+          "success": true
+        })
+      }, 400)
+    })
+  }
   return request.post(`/api/invitation/${invitationId}/accept`)
 }
 
-// 新增：拒绝组织邀请
+// 拒绝组织邀请
 export const rejectInvitation = (invitationId) => {
+  if (IS_DEV) {
+    // 模拟数据
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          "code": 1,
+          "message": "已拒绝邀请",
+          "success": true
+        })
+      }, 300)
+    })
+  }
   return request.post(`/api/invitation/${invitationId}/reject`)
 }
