@@ -4,7 +4,7 @@ from ..models.organization import (
     delete_organization, set_organization_admins, search_organization,
     create_join_request, create_invitation, get_user_invitations,
     handle_invitation, search_users, get_organization_join_requests,
-    handle_join_request
+    handle_join_request, get_user_organizations
 )
 from ..services.auth_service import verify_token
 
@@ -185,3 +185,13 @@ def search_users_service(token, query):
         return [], "搜索关键词不能为空"
     
     return search_users(query.strip())
+
+def get_user_organizations_service(token):
+    """获取用户组织列表服务"""
+    # 验证token
+    payload = verify_token(token)
+    if not payload:
+        return [], "用户未登录或 token 无效"
+    
+    user_id = payload['user_id']
+    return get_user_organizations(user_id)
