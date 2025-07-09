@@ -8,6 +8,7 @@ from ..services.user_service import (
     upload_avatar,
     update_qq_avatar_service
 )
+from ..services.organization_service import get_user_organizations_service
 import logging
 
 user_bp = Blueprint('user', __name__)
@@ -261,4 +262,38 @@ def bind_phone_route():
         return jsonify({
             'code': 0,
             'message': '服务器内部错误'
+        }), 500
+
+@user_bp.route('/user/orglist', methods=['GET'])
+def get_user_organization_list():
+    """获取用户组织列表"""
+    try:
+        data = request.get_json() or {}
+        
+        # 验证必填字段
+        valid, message = validate_request_data(data, ['token'])
+        if not valid:
+            return jsonify({
+                'code': 0,
+                'message': message,
+                'data': []
+            }), 400
+        
+        token = data.get('token')
+        
+        # 获取用户组织列表
+        organizations, message = get_user_organizations_service(token)
+        
+        return jsonify({
+            'code': 1,
+            'message': message,
+            'data': organizations
+        })
+            
+    except Exception as e:
+        logging.error(f"Get user organization list error: {str(e)}")
+        return jsonify({
+            'code': 0,
+            'message': '服务器内部错误',
+            'data': []
         }), 500

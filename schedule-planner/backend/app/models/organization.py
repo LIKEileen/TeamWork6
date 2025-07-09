@@ -734,3 +734,39 @@ def handle_join_request(request_id, user_id, action):
         return False, f"处理失败: {str(e)}"
     finally:
         conn.close()
+
+def get_user_organizations(user_id):
+    """获取用户加入的组织列表"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        user_id = normalize_user_id(user_id)
+        
+        # 查询用户加入的所有组织
+        cursor.execute('''
+            SELECT o.id, o.name, COUNT(om.user_id) as member_count
+            FROM organizations o
+            JOIN organization_members om ON o.id = om.org_id
+            WHERE o.id IN (
+                SELECT org_id FROM organization_members WHERE user_id = ?
+            )
+            GROUP BY o.id, o.name
+            ORDER BY o.name
+        ''', (user_id,))
+        
+        organizations = []
+        for org in cursor.fetchall():
+            organizations.append({
+                'id': org['id'],
+                'name': org['name'],
+                'members': org['member_count']
+            })
+        
+        return organizations, "success"
+        
+    except Exception as e:
+        print(f"获取用户组织列表失败: {str(e)}")
+        return [], f"获取失败: {str(e)}"
+    finally:
+        conn.close()
