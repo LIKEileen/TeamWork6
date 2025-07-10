@@ -32,24 +32,22 @@ def validate_request_data(data, required_fields):
     
     return True, "验证通过"
 
-@schedule_bp.route('/user/schedule', methods=['POST'])
+@schedule_bp.route('/user/schedule', methods=['GET'])
 def get_user_schedule():
     """获取用户日程列表"""
     try:
-        data = request.get_json()
+        # 从查询参数获取token和可选的日期范围
+        token = request.args.get('token')
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
         
-        # 验证必填字段
-        valid, message = validate_request_data(data, ['token'])
-        if not valid:
+        # 验证token
+        if not token or token.strip() == '':
             return jsonify({
                 'code': 0,
-                'message': message,
+                'message': '缺少必填字段: token',
                 'data': []
             }), 400
-        
-        token = data.get('token')
-        start_date = data.get('start_date')
-        end_date = data.get('end_date')
         
         schedules, message = get_user_schedule_list(token, start_date, end_date)
         

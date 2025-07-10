@@ -110,14 +110,14 @@ def create_app():
     from .routes.schedule import schedule_bp
     from .routes.meeting import meeting_bp
     from .routes.upload import upload_bp
-    from .routes.organization import organization_bp  # 新增组织路由
+    from .routes.organization import organization_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api')
     app.register_blueprint(user_bp, url_prefix='/api')
     app.register_blueprint(schedule_bp, url_prefix='/api')
     app.register_blueprint(meeting_bp, url_prefix='/api')
     app.register_blueprint(upload_bp, url_prefix='/api')
-    app.register_blueprint(organization_bp, url_prefix='/api')  # 注册组织路由
+    app.register_blueprint(organization_bp, url_prefix='/api')
     
     # 初始化数据库（应用启动时执行一次）
     with app.app_context():

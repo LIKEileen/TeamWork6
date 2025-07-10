@@ -770,3 +770,128 @@ def get_user_organizations(user_id):
         return [], f"获取失败: {str(e)}"
     finally:
         conn.close()
+
+def check_user_in_organization(user_id, org_id):
+    """检查用户是否属于指定组织"""
+    import sqlite3
+    
+    # 直接连接组织数据库
+    conn = sqlite3.connect('organization.db')
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute('''
+            SELECT id FROM organization_members 
+            WHERE org_id = ? AND user_id = ?
+        ''', (org_id, user_id))
+        
+        result = cursor.fetchone()
+        return result is not None
+        
+    except Exception as e:
+        print(f"Error checking user membership: {str(e)}")
+        return False
+    finally:
+        conn.close()
+
+def get_organization_heatmap_data(org_id, start_date, end_date):
+    """获取组织热力图数据"""
+    import sqlite3
+    from datetime import datetime, timedelta
+    
+    # 连接日程数据库
+    schedule_conn = sqlite3.connect('schedule_planner.db')
+    schedule_cursor = schedule_conn.cursor()
+    
+    # 连接组织数据库
+    org_conn = sqlite3.connect('organization.db')
+    org_cursor = org_conn.cursor()
+    
+    try:
+        # 获取组织成员列表 - 使用正确的列名：org_id 和 user_id
+        org_cursor.execute('''
+            SELECT user_id FROM organization_members 
+            WHERE org_id = ?
+        ''', (org_id,))
+        
+        members = org_cursor.fetchall()
+        
+        if not members:
+            return None, "组织不存在或没有成员"
+        
+        member_ids = [member[0] for member in members]
+        
+        # 计算日期范围
+        start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+        end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+        
+        # 验证日期范围（最多30天）
+        if (end_dt - start_dt).days > 30:
+            return None, "日期范围不能超过30天"
+        
+        if start_dt > end_dt:
+            return None, "开始日期不能晚于结束日期"
+        
+        # 生成日期列表
+        current_date = start_dt
+        date_list = []
+        while current_date <= end_dt:
+            date_list.append(current_date.strftime('%Y-%m-%d'))
+            current_date += timedelta(days=1)
+        
+        
+        # 初始化热力图数据 (24行 x n列)
+        num_days = len(date_list)
+        heatmap = [[0 for _ in range(num_days)] for _ in range(24)]
+        
+        # 查询所有成员在指定时间范围内的日程
+        if member_ids:
+            member_placeholders = ','.join(['?' for _ in member_ids])
+            query = f'''
+                SELECT day, start_time, end_time, user_id
+                FROM schedule_events 
+                WHERE user_id IN ({member_placeholders})
+                AND day BETWEEN ? AND ?
+            '''
+            schedule_cursor.execute(query, member_ids + [start_date, end_date])
+            
+            events = schedule_cursor.fetchall()
+            
+            # 统计每个时间段的事件数量
+            for event in events:
+                event_date, start_time, end_time, event_user_id = event
+                print(f"Processing event: {event_date} {start_time}-{end_time} for user {event_user_id}")
+                
+                if event_date in date_list:
+                    day_index = date_list.index(event_date)
+                    
+                    # 解析时间
+                    start_hour, start_minute = map(int, start_time.split(':'))
+                    end_hour, end_minute = map(int, end_time.split(':'))
+                    
+                    # 计算开始和结束的时间段索引 (08:00开始，每半小时一段)
+                    start_slot = max(0, (start_hour - 8) * 2 + (1 if start_minute >= 30 else 0))
+                    end_slot = min(23, (end_hour - 8) * 2 + (1 if end_minute > 30 else 0))
+                    
+                    # 确保在有效范围内（08:00-20:30）
+                    if start_slot < 24 and end_slot >= 0:
+                        start_slot = max(0, start_slot)
+                        end_slot = min(23, end_slot)
+                        
+                        print(f"Event covers slots {start_slot} to {end_slot} on day {day_index}")
+                        
+                        # 标记该时间段内的所有格子
+                        for slot in range(start_slot, end_slot + 1):
+                            heatmap[slot][day_index] += 1
+        
+        print(f"Generated heatmap with dimensions: {len(heatmap)}x{len(heatmap[0]) if heatmap else 0}")
+        return heatmap, "success"
+        
+    except Exception as e:
+        print(f"Error generating heatmap: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return None, f"生成热力图失败: {str(e)}"
+    finally:
+        schedule_conn.close()
+        org_conn.close()
