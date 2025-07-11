@@ -4,7 +4,6 @@ from datetime import datetime, time, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
 from ..models.meeting import create_meeting_in_db, get_meetings_by_user_id
-from ..models.user import get_user_by_email
 from ..models.schedule import get_user_schedules
 from .util import DAY_NAMES, merge_intervals, subtract_intervals
 
@@ -179,8 +178,8 @@ def _recursive_find(free_time_slots: List[Dict], duration: int) -> List[int]:
 
 
 def find_meeting_times(
-    participants: List[str],
-    key_participants: List[str],
+    participant_ids: List[int],
+    key_participant_ids: List[int],
     duration_minutes: int,
     start_date_str: Optional[str] = None,
     end_date_str: Optional[str] = None,
@@ -188,8 +187,8 @@ def find_meeting_times(
     """寻找多个参与者共同的会议时间。
 
     Args:
-        participants (List[str]): 参与者邮箱列表。
-        key_participants (List[str]): 关键参与者邮箱列表。
+        participant_ids (List[int]): 参与者ID列表。
+        key_participant_ids (List[int]): 关键参与者ID列表。
         duration_minutes (int): 会议持续时间（分钟）。
         start_date_str (Optional[str]): 搜索开始日期。默认为今天。
         end_date_str (Optional[str]): 搜索结束日期。默认为7天后。
@@ -199,7 +198,7 @@ def find_meeting_times(
                                                       键是日期，值是时间段列表。第二个元素是消息。
     """
     try:
-        logging.info(f"Finding meeting times for participants: {participants}")
+        logging.info(f"Finding meeting times for participants: {participant_ids}")
         logging.info(f"Duration: {duration_minutes} minutes")
 
         # 1. 解析日期，如果未提供，则设置默认范围
@@ -214,25 +213,17 @@ def find_meeting_times(
             else start_date + timedelta(days=7)
         )
 
-        # 2. 获取用户信息
-        user_map: Dict[str, Optional[Dict]] = {
-            user_email: get_user_by_email(user_email) for user_email in participants
-        }
-        for email, user in user_map.items():
-            if not user:
-                return {}, f"参与者 {email} 未找到"
-
-        # 3. 获取所有人的日程并转换为分钟为单位的忙碌时间区间
+        # 2. 获取所有人的日程并转换为分钟为单位的忙碌时间区间
         person_busy_time_list = []
-        for email, user in user_map.items():
+        for user_id in participant_ids:
             # 从数据库获取会议列表
             meetings: List[Dict[str, Any]] = get_meetings_by_user_id(
-                user["id"], start_date, end_date
+                user_id, start_date, end_date
             )
 
             # 从数据库获取个人日程列表
             schedules: List[Dict[str, Any]] = get_user_schedules(
-                user["id"], start_date, end_date
+                user_id, start_date, end_date
             )
 
             busy_time: Dict[str, List[int]] = {}
@@ -274,9 +265,9 @@ def find_meeting_times(
 
             person_busy_time_list.append(
                 {
-                    "id": user["id"],
+                    "id": user_id,
                     "important": 1
-                    if email in key_participants
+                    if user_id in key_participant_ids
                     else 0,  # 标记关键参与者
                     "busy_time": busy_time,
                 }
@@ -348,7 +339,7 @@ def create_meeting(
     """创建会议。
 
     Args:
-        meeting_data (Dict[str, Any]): 会议数据，包含 title, start_time, end_time, participants 等。
+        meeting_data (Dict[str, Any]): 会议数据，包含 title, start_time, end_time, participant_ids 等。
         creator_id (int): 创建者的用户ID。
 
     Returns:
@@ -358,7 +349,7 @@ def create_meeting(
         logging.info(f"Creating meeting: {meeting_data}")
 
         # 验证必填字段
-        required_fields = ["title", "start_time", "end_time", "participants"]
+        required_fields = ["title", "start_time", "end_time", "participant_ids"]
         for field in required_fields:
             if not meeting_data.get(field):
                 return None, f"{field} 不能为空"
@@ -378,37 +369,12 @@ def create_meeting(
             return None, "开始时间必须早于结束时间"
 
         # 解析参与者
-        participant_emails: List[str] = meeting_data.get("participants", [])
-        key_participant_emails: List[str] = meeting_data.get("key_participants", [])
+        participant_ids: List[int] = meeting_data.get("participant_ids", [])
+        key_participant_ids: List[int] = meeting_data.get("key_participant_ids", [])
 
         # 关键成员必须是参会成员的子集
-        if not set(key_participant_emails).issubset(set(participant_emails)):
+        if not set(key_participant_ids).issubset(set(participant_ids)):
             return None, "关键成员必须是参会成员的一部分"
-
-        participant_ids = []
-        unresolved_emails = []
-        for email in participant_emails:
-            # 通过邮箱查找用户，获取其ID
-            user = get_user_by_email(email)
-            if user:
-                participant_ids.append(user["id"])
-            else:
-                unresolved_emails.append(email)
-
-        if unresolved_emails:
-            return None, f"以下普通参与者未找到: {', '.join(unresolved_emails)}"
-
-        key_participant_ids = []
-        unresolved_key_emails = []
-        for email in key_participant_emails:
-            user: Optional[Dict] = get_user_by_email(email)
-            if user:
-                key_participant_ids.append(user["id"])
-            else:
-                unresolved_key_emails.append(email)
-
-        if unresolved_key_emails:
-            return None, f"以下关键参与者未找到: {', '.join(unresolved_key_emails)}"
 
         # 保存到数据库
         meeting, message = create_meeting_in_db(

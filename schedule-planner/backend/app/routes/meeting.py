@@ -33,17 +33,17 @@ def find_available_time():
 
         # 验证必填字段
         valid, message = validate_request_data(
-            data, ["token", "participants", "duration"]
+            data, ["token", "participant_ids", "duration"]
         )
         if not valid:
             return jsonify({"code": 0, "message": message}), 400
 
         token = data.get("token")
-        participants = data.get("participants")
+        participant_ids = data.get("participant_ids")
         duration = data.get("duration")
         start_date_str = data.get("start_date")
         end_date_str = data.get("end_date")
-        key_participants = data.get("key_participants", [])
+        key_participant_ids = data.get("key_participant_ids", [])
 
         # 验证token
         payload = verify_token(token)
@@ -69,7 +69,11 @@ def find_available_time():
 
         # 查找可用时间
         available_times, message = find_meeting_times(
-            participants, key_participants, int(duration), start_date_str, end_date_str
+            participant_ids,
+            key_participant_ids,
+            int(duration),
+            start_date_str,
+            end_date_str,
         )
 
         return jsonify(
@@ -93,7 +97,7 @@ def create_new_meeting():
 
         # 验证必填字段
         valid, message = validate_request_data(
-            data, ["token", "title", "start_time", "end_time", "participants"]
+            data, ["token", "title", "start_time", "end_time", "participant_ids"]
         )
         if not valid:
             return jsonify({"code": 0, "message": message}), 400
