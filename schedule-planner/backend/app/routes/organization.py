@@ -3,9 +3,9 @@ from flask import Blueprint, request, jsonify
 from ..services.organization_service import (
     create_organization_service, get_organization_service, update_organization_service,
     delete_organization_service, set_admins_service, search_organization_service,
-    join_request_service, invite_user_service, get_invitations_service,
-    handle_invitation_service, search_users_service, get_join_requests_service,
-    handle_join_request_service
+    join_request_service, get_join_requests_service, handle_join_request_service,
+    invite_user_service, get_invitations_service, handle_invitation_service,
+    search_users_service, get_organization_heatmap_service
 )
 import logging
 
@@ -491,4 +491,57 @@ def handle_invitation(invitation_id, action):
             'code': 0,
             'message': '服务器内部错误',
             'success': False
+        }), 500
+
+@organization_bp.route('/heatmap/<string:org_id>', methods=['GET'])
+def get_organization_heatmap(org_id):
+    """获取组织热力图"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                "code": 0,
+                "message": "请求体不能为空"
+            }), 400
+        
+        # 获取参数
+        token = data.get('token')
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        
+        # 验证必填参数
+        if not token:
+            return jsonify({
+                "code": 0,
+                "message": "token不能为空"
+            }), 400
+        
+        if not start_date or not end_date:
+            return jsonify({
+                "code": 0,
+                "message": "开始日期和结束日期不能为空"
+            }), 400
+        
+        # 调用服务
+        heatmap_data, message = get_organization_heatmap_service(
+            token, org_id, start_date, end_date
+        )
+        
+        if heatmap_data is None:
+            return jsonify({
+                "code": 0,
+                "message": message
+            }), 400
+        
+        return jsonify({
+            "code": 1,
+            "message": message,
+            "data": heatmap_data
+        })
+        
+    except Exception as e:
+        print(f"Error in get_organization_heatmap: {str(e)}")
+        return jsonify({
+            "code": 0,
+            "message": "获取热力图失败"
         }), 500

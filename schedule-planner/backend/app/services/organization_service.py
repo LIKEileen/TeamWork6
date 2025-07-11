@@ -4,7 +4,8 @@ from ..models.organization import (
     delete_organization, set_organization_admins, search_organization,
     create_join_request, create_invitation, get_user_invitations,
     handle_invitation, search_users, get_organization_join_requests,
-    handle_join_request, get_user_organizations
+    handle_join_request, get_user_organizations, get_organization_heatmap_data,
+    check_user_in_organization
 )
 from ..services.auth_service import verify_token
 
@@ -195,3 +196,41 @@ def get_user_organizations_service(token):
     
     user_id = payload['user_id']
     return get_user_organizations(user_id)
+
+def get_organization_heatmap_service(token, org_id, start_date, end_date):
+    """获取组织热力图服务"""
+    # 验证token
+    payload = verify_token(token)
+    if not payload:
+        return None, "用户未登录或 token 无效"
+    
+    user_id = payload['user_id']
+    
+    # 验证日期格式
+    try:
+        from datetime import datetime
+        start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+        end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+    except ValueError:
+        return None, "日期格式错误，请使用 yyyy-MM-dd 格式"
+    
+    # 验证日期范围
+    if (end_dt - start_dt).days > 30:
+        return None, "日期范围不能超过30天"
+    
+    if start_dt > end_dt:
+        return None, "开始日期不能晚于结束日期"
+    
+    # 检查用户是否属于该组织
+    is_member = check_user_in_organization(user_id, org_id)
+    
+    if not is_member:
+        return None, "用户不属于该组织"
+    
+    # 获取热力图数据
+    heatmap_data, message = get_organization_heatmap_data(org_id, start_date, end_date)
+    
+    if heatmap_data is None:
+        return None, message
+    
+    return {"heatmap": heatmap_data}, message
