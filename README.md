@@ -11,12 +11,6 @@
 ![Element Plus](https://img.shields.io/badge/Element%20Plus-2.9.8-409EFF?style=flat-square)
 
 **一个现代化的智能会议预约与日程管理系统，支持AI助手、组织管理、智能时间推荐等功能**
-
-[![GitHub stars](https://img.shields.io/github/stars/your-username/EasyMeeting?style=social)](https://github.com/your-username/EasyMeeting)
-[![GitHub forks](https://img.shields.io/github/forks/your-username/EasyMeeting?style=social)](https://github.com/your-username/EasyMeeting)
-[![GitHub issues](https://img.shields.io/github/issues/your-username/EasyMeeting)](https://github.com/your-username/EasyMeeting/issues)
-[![GitHub license](https://img.shields.io/github/license/your-username/EasyMeeting)](https://github.com/your-username/EasyMeeting/blob/main/LICENSE)
-
 </div>
 
 ## 📋 目录
