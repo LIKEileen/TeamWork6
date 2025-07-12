@@ -1,199 +1,785 @@
 # TeamWork6
 
-## 项目概述
-TeamWork6是一款智能日程协作平台，旨在解决团队协作中的日程安排痛点，提供智能日程调度、组织级日程可视化和标准化数据接入功能。本平台通过整合AI算法与直观的用户界面，帮助团队高效管理会议安排，提升协作效率。
+# EasyMeeting - 智能会议预约与日程管理系统
 
-## 产品特点
-- **智能日程调度**：基于参与者日程自动推荐最佳会议时间
-- **组织级日程可视化**：直观展示团队成员的日程安排和忙闲状态
-- **标准化数据接入**：支持导入Excel日程表和集成第三方日历服务
-- **角色权限管理**：灵活的组织和成员权限控制
-- **会议生命周期管理**：从创建、参与到记录的全流程支持
-- **大模型集成**：支持配置AI助手以提供智能会议建议
+<div align="center">
 
-## 技术架构
+![EasyMeeting Logo](https://img.shields.io/badge/EasyMeeting-智能会议预约-blue?style=for-the-badge&logo=calendar)
+![Vue.js](https://img.shields.io/badge/Vue.js-3.5.13-4FC08D?style=flat-square&logo=vue.js)
+![Flask](https://img.shields.io/badge/Flask-2.0+-000000?style=flat-square&logo=flask)
+![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=flat-square&logo=python)
+![Element Plus](https://img.shields.io/badge/Element%20Plus-2.9.8-409EFF?style=flat-square)
+
+**一个现代化的智能会议预约与日程管理系统，支持AI助手、组织管理、智能时间推荐等功能**
+
+[![GitHub stars](https://img.shields.io/github/stars/your-username/EasyMeeting?style=social)](https://github.com/your-username/EasyMeeting)
+[![GitHub forks](https://img.shields.io/github/forks/your-username/EasyMeeting?style=social)](https://github.com/your-username/EasyMeeting)
+[![GitHub issues](https://img.shields.io/github/issues/your-username/EasyMeeting)](https://github.com/your-username/EasyMeeting/issues)
+[![GitHub license](https://img.shields.io/github/license/your-username/EasyMeeting)](https://github.com/your-username/EasyMeeting/blob/main/LICENSE)
+
+</div>
+
+## 📋 目录
+
+- [项目简介](#项目简介)
+- [功能特性](#功能特性)
+- [技术架构](#技术架构)
+- [项目结构](#项目结构)
+- [快速开始](#快速开始)
+- [API文档](#api文档)
+- [部署指南](#部署指南)
+- [开发指南](#开发指南)
+- [贡献指南](#贡献指南)
+- [许可证](#许可证)
+
+## 🎯 项目简介
+
+EasyMeeting 是一个基于 Vue.js 3 + Flask 的现代化智能会议预约与日程管理系统。该系统集成了AI助手、组织管理、智能时间推荐等先进功能，旨在为企业、团队和个人提供高效便捷的会议管理和日程安排解决方案。
+
+### 核心价值
+
+- **智能化**：集成AI助手，支持自然语言交互和智能时间推荐
+- **协作性**：完善的组织管理功能，支持团队协作
+- **可视化**：直观的热力图展示和日程管理界面
+- **易用性**：现代化的UI设计，操作简单直观
+- **扩展性**：模块化架构，易于扩展和维护
+
+## ✨ 功能特性
+
+### 🔐 用户认证系统
+- **多方式登录**：支持手机号、邮箱登录
+- **安全认证**：JWT Token认证机制
+- **密码管理**：密码重置、手机号绑定
+- **用户信息管理**：头像上传、个人信息编辑
+
+### 📅 智能日程管理
+- **可视化日程**：热力图展示，直观查看时间安排
+- **事件管理**：添加、编辑、删除日程事件
+- **时间冲突检测**：自动检测并提醒时间冲突
+- **Excel导入**：支持Excel文件批量导入日程
+- **颜色分类**：自定义事件颜色，便于分类管理
+
+### 🤝 会议预约系统
+- **智能时间推荐**：基于参与者空闲时间自动推荐最佳会议时间
+- **会议创建**：支持创建单次和重复会议
+- **参与者管理**：邀请、移除会议参与者
+- **会议详情**：完整的会议信息管理
+
+### 🏢 组织管理
+- **组织创建**：创建和管理多个组织
+- **成员管理**：邀请、移除组织成员
+- **权限控制**：创建者、管理员、普通成员三级权限
+- **组织邀请**：支持邀请码和直接邀请
+
+### 🤖 AI智能助手
+- **自然语言交互**：支持中文自然语言查询
+- **智能查询**：查询会议安排、空闲时间
+- **智能推荐**：基于历史数据推荐最佳时间
+- **函数调用**：支持工具函数调用，执行具体任务
+
+### 📱 现代化界面
+- **响应式设计**：适配各种设备屏幕
+- **主题切换**：支持明暗主题切换
+- **组件化设计**：基于Element Plus组件库
+- **用户体验优化**：流畅的交互体验
+
+## 🏗️ 技术架构
 
 ### 前端技术栈
-- **框架**：Vue 3 <mcfile name="package.json" path="TeamWork6\openSourceFront\package.json"></mcfile>
-- **UI组件库**：Element Plus <mcfile name="package.json" path="TeamWork6\openSourceFront\package.json"></mcfile>
-- **状态管理**：Pinia <mcfile name="package.json" path="TeamWork6\openSourceFront\package.json"></mcfile>
-- **路由**：Vue Router <mcfile name="package.json" path="TeamWork6\openSourceFront\package.json"></mcfile>
-- **HTTP客户端**：Axios <mcfile name="package.json" path="TeamWork6\openSourceFront\package.json"></mcfile>
-- **构建工具**：Vite <mcfile name="package.json" path="TeamWork6\openSourceFront\package.json"></mcfile>
+- **框架**：Vue.js 3.5.13
+- **构建工具**：Vite 6.2.0
+- **UI组件库**：Element Plus 2.9.8
+- **状态管理**：Pinia 3.0.2
+- **路由管理**：Vue Router 4.5.0
+- **HTTP客户端**：Axios 1.8.4
+- **日期处理**：Day.js 1.11.13
+- **图片裁剪**：Cropper.js 1.6.2
+- **Markdown渲染**：Marked 15.0.11
+- **AI集成**：OpenAI 4.96.0
 
 ### 后端技术栈
-- **语言**：Python
-- **Web框架**：Flask <mcfile name="meeting.py" path="TeamWork6\schedule-planner\backend\app\routes\meeting.py"></mcfile>
-- **数据库**：SQLite <mcfile name="meeting.py" path="TeamWork6\schedule-planner\backend\app\models\meeting.py"></mcfile>
-- **认证**：JWT Token验证
-- **密码加密**：Werkzeug安全工具 <mcfile name="user.py" path="TeamWork6\schedule-planner\backend\app\models\user.py"></mcfile>
+- **框架**：Flask 2.0+
+- **数据库**：SQLite (轻量级部署)
+- **认证**：JWT (JSON Web Token)
+- **密码加密**：Passlib + bcrypt
+- **文件处理**：Pillow (图像处理)
+- **数据处理**：Pandas + OpenPyXL
+- **AI服务**：OpenAI API
+- **邮件服务**：SMTP (QQ邮箱)
+- **跨域处理**：Flask-CORS
 
-## 项目结构
+### 开发工具
+- **包管理**：pnpm (前端) / pip (后端)
+- **代码格式化**：ESLint + Prettier
+- **测试框架**：pytest (后端)
+- **版本控制**：Git
+
+## 📁 项目结构
 
 ```
-TeamWork6/
-├── schedule-planner/          # 后端服务
-│   ├── backend/               # 应用核心代码
-│   │   ├── app/               # 应用主目录
-│   │   │   ├── models/        # 数据模型
-│   │   │   ├── routes/        # API路由
-│   │   │   ├── services/      # 业务逻辑
-│   │   │   ├── config.py      # 配置文件
-│   │   ├── tests/             # 后端测试
-│   │   ├── uploads/           # 文件上传目录
-│   ├── docs/                  # 后端文档
+EasyMeeting/
+├── openSourceFront/          # 前端项目
+│   ├── src/
+│   │   ├── components/       # Vue组件
+│   │   │   ├── Sidebar.vue           # 侧边栏组件
+│   │   │   ├── ChatAssistant.vue     # AI助手组件
+│   │   │   ├── HeatmapGrid.vue       # 热力图组件
+│   │   │   ├── EventModal.vue        # 事件弹窗组件
+│   │   │   ├── AvatarCropper.vue     # 头像裁剪组件
+│   │   │   └── ...
+│   │   ├── pages/           # 页面组件
+│   │   │   ├── Schedule.vue          # 日程管理页面
+│   │   │   ├── MyOrganization.vue    # 组织管理页面
+│   │   │   ├── CreateMeeting.vue     # 创建会议页面
+│   │   │   ├── LoginPage.vue         # 登录页面
+│   │   │   └── ...
+│   │   ├── api/             # API接口
+│   │   ├── store/           # 状态管理
+│   │   ├── router/          # 路由配置
+│   │   ├── utils/           # 工具函数
+│   │   └── assets/          # 静态资源
+│   ├── public/              # 公共资源
+│   ├── package.json         # 前端依赖配置
+│   ├── vite.config.js       # Vite配置
+│   └── 接口.md              # 接口文档
 │
-├── openSourceFront/           # 前端应用
-│   ├── src/                   # 源代码
-│   │   ├── pages/             # 页面组件
-│   │   ├── router/            # 路由配置
-│   │   ├── components/        # UI组件
-│   │   ├── store/             # 状态管理
-│   │   ├── utils/             # 工具函数
-│   ├── package.json           # 依赖配置
+├── schedule-planner/         # 后端项目
+│   ├── backend/
+│   │   ├── app/
+│   │   │   ├── models/      # 数据模型
+│   │   │   │   ├── user.py          # 用户模型
+│   │   │   │   ├── organization.py  # 组织模型
+│   │   │   │   ├── meeting.py       # 会议模型
+│   │   │   │   └── schedule.py      # 日程模型
+│   │   │   ├── routes/      # 路由控制器
+│   │   │   │   ├── auth.py          # 认证路由
+│   │   │   │   ├── user.py          # 用户路由
+│   │   │   │   ├── meeting.py       # 会议路由
+│   │   │   │   ├── organization.py  # 组织路由
+│   │   │   │   ├── schedule.py      # 日程路由
+│   │   │   │   ├── chat.py          # AI聊天路由
+│   │   │   │   └── upload.py        # 文件上传路由
+│   │   │   ├── services/    # 业务逻辑
+│   │   │   ├── __init__.py  # 应用初始化
+│   │   │   └── config.py    # 配置文件
+│   │   ├── tests/           # 测试文件
+│   │   ├── docs/            # 文档
+│   │   ├── uploads/         # 上传文件目录
+│   │   ├── requirements.txt # Python依赖
+│   │   └── run.py          # 启动文件
+│   └── README.md
 │
-├── test/                      # 测试文档
-│   ├── tool/                  # 测试工具
-│   ├── 测试.md                # 测试用例
-│
-├── Technical architecture/    # 技术架构文档
-│   ├── 接口文档.md            # API文档
-│   ├── DB设计说明.md          # 数据库设计
-│
-├── product.md                 # 产品文档
-├── team.md                    # 团队文档
-└── README.md                  # 项目说明
+└── README.md                # 项目主文档
 ```
 
-## 功能模块
+## 🚀 快速开始
 
-### 用户认证与管理
-- **注册/登录**：支持手机号、邮箱登录与注册 <mcfile name="测试.md" path="TeamWork6\test\测试.md"></mcfile>
-- **个人信息管理**：修改昵称、邮箱、手机号、密码 <mcfile name="测试.md" path="TeamWork6\test\测试.md"></mcfile>
-- **头像上传**：支持图片上传和QQ头像链接 <mcfile name="测试.md" path="TeamWork6\test\测试.md"></mcfile>
-- **权限控制**：基于角色的访问控制 <mcfile name="user.py" path="TeamWork6\schedule-planner\backend\app\models\user.py"></mcfile>
+### 环境要求
 
-### 日程管理
-- **日程查看**：个人日程列表与详情 <mcfile name="测试.md" path="TeamWork6\test\测试.md"></mcfile>
-- **日程创建**：支持单次和重复日程 <mcfile name="测试.md" path="TeamWork6\test\测试.md"></mcfile>
-- **日程导入**：Excel文件导入功能 <mcfile name="测试.md" path="TeamWork6\test\测试.md"></mcfile>
-- **日程删除**：单个和批量删除功能 <mcfile name="测试.md" path="TeamWork6\test\测试.md"></mcfile>
+- **Node.js** >= 16.0.0
+- **Python** >= 3.8
+- **pnpm** >= 7.0.0 (推荐) 或 npm >= 8.0.0
 
-### 会议管理
-- **智能会议时间推荐**：基于参与者日程自动推荐最佳时间 <mcfile name="meeting_service.py" path="TeamWork6\schedule-planner\backend\app\services\meeting_service.py"></mcfile>
-- **会议创建**：设置标题、描述、时间、参与者 <mcfile name="meeting.py" path="TeamWork6\schedule-planner\backend\app\routes\meeting.py"></mcfile>
-- **会议参与者管理**：添加/移除参与者，标记关键成员 <mcfile name="meeting.py" path="TeamWork6\schedule-planner\backend\app\models\meeting.py"></mcfile>
-- **会议列表**：按日期筛选个人会议 <mcfile name="meeting.py" path="TeamWork6\schedule-planner\backend\app\routes\meeting.py"></mcfile>
+### 1. 克隆项目
 
-### 组织管理
-- **组织列表**：查看用户所属组织 <mcfile name="测试.md" path="TeamWork6\test\测试.md"></mcfile>
-- **组织热力图**：可视化组织成员活动分布 <mcfile name="测试.md" path="TeamWork6\test\测试.md"></mcfile>
+```bash
+git clone https://github.com/your-username/EasyMeeting.git
+cd EasyMeeting
+```
 
-### 大模型集成
-- **配置管理**：设置大模型API、密钥和系统提示词 <mcfile name="测试.md" path="TeamWork6\test\测试.md"></mcfile>
+### 2. 后端环境配置
 
-## 前端页面结构
-- **认证页面**：登录、注册、忘记密码、绑定手机 <mcfile name="index.js" path="TeamWork6\openSourceFront\src\router\index.js"></mcfile>
-- **仪表盘**：
-  - 组织看板
-  - 个人日程
-  - 创建会议
-  - 组织管理
-  - 个人设置 <mcfile name="index.js" path="TeamWork6\openSourceFront\src\router\index.js"></mcfile>
+```bash
+# 进入后端目录
+cd schedule-planner/backend
 
-## 后端API接口
+# 创建虚拟环境
+python -m venv venv
 
-### 认证接口
-- 登录/注册
-- 验证码发送与验证
-- Token验证
+# 激活虚拟环境
+# Windows
+venv\Scripts\activate
+# macOS/Linux
+source venv/bin/activate
 
-### 会议接口
-- `POST /meeting/find-time` - 查找可用会议时间 <mcfile name="meeting.py" path="TeamWork6\schedule-planner\backend\app\routes\meeting.py"></mcfile>
-- `POST /meeting/create` - 创建会议 <mcfile name="meeting.py" path="TeamWork6\schedule-planner\backend\app\routes\meeting.py"></mcfile>
-- `POST /meeting/list` - 获取会议列表 <mcfile name="meeting.py" path="TeamWork6\schedule-planner\backend\app\routes\meeting.py"></mcfile>
+# 安装依赖
+pip install -r requirements.txt
 
-### 用户接口
-- 用户信息管理
-- 密码修改
-- 头像上传
+# 配置环境变量
+export SECRET_KEY="your-secret-key"
+export OPENAI_API_KEY="your-openai-api-key"
 
-### 组织接口
-- 组织列表
-- 组织热力图
+# 启动后端服务
+python run.py
+```
 
-## 数据库设计
-- **数据库范式**：遵循1NF到5NF及BCNF规范 <mcfile name="DB设计说明.md" path="TeamWork6\Technical architecture\DB设计说明.md"></mcfile>
-- **主要表结构**：
-  - `users` - 用户信息
-  - `meetings` - 会议信息
-  - `meeting_participants` - 会议参与者
-  - `verification_codes` - 验证码
-  - `token_blacklist` - Token黑名单 <mcfile name="user.py" path="TeamWork6\schedule-planner\backend\app\models\user.py"></mcfile>
+后端服务将在 `http://localhost:5000` 启动
 
-## 测试用例
-系统包含全面的测试用例，覆盖以下功能：
-- 登录/注册功能测试
-- 日程管理测试
-- 用户信息管理测试
-- 组织功能测试
-- 大模型配置测试 <mcfile name="测试.md" path="TeamWork6\test\测试.md"></mcfile>
+### 3. 前端环境配置
 
-## 安装与运行
-
-### 前端
 ```bash
 # 进入前端目录
 cd openSourceFront
 
 # 安装依赖
+pnpm install
+# 或使用 npm
 npm install
 
-# 开发模式运行
+# 配置环境变量
+cp .env.example .env.local
+# 编辑 .env.local 文件，配置后端API地址
+
+# 启动开发服务器
+pnpm dev
+# 或使用 npm
 npm run dev
-
-# 构建生产版本
-npm run build
-
-# 预览构建结果
-npm run preview
 ```
 
-### 后端
+前端服务将在 `http://localhost:5173` 启动
+
+### 4. 访问应用
+
+打开浏览器访问 `http://localhost:5173` 即可使用应用。
+
+## 📚 API文档
+
+### 认证相关接口
+
+#### 用户登录
+```http
+POST /api/login
+Content-Type: application/json
+
+{
+  "phone": "13812345678",
+  "password": "123456"
+}
+```
+
+#### 用户注册
+```http
+POST /api/register
+Content-Type: application/json
+
+{
+  "nickname": "张三",
+  "phone": "13812345678",
+  "email": "zhangsan@example.com",
+  "password": "123456"
+}
+```
+
+### 会议管理接口
+
+#### 查找可用会议时间
+```http
+POST /api/meeting/find-time
+Content-Type: application/json
+
+{
+  "token": "your-auth-token",
+  "participant_ids": ["user1_id", "user2_id"],
+  "duration": 60,
+  "start_date": "2024-08-01",
+  "end_date": "2024-08-10"
+}
+```
+
+#### 创建会议
+```http
+POST /api/meeting/create
+Content-Type: application/json
+
+{
+  "token": "your-auth-token",
+  "title": "项目启动会",
+  "start_time": "2024-08-01 10:00:00",
+  "end_time": "2024-08-01 11:00:00",
+  "participant_ids": ["user1_id", "user2_id"]
+}
+```
+
+### 组织管理接口
+
+#### 创建组织
+```http
+POST /api/organization/create
+Content-Type: application/json
+
+{
+  "token": "your-auth-token",
+  "name": "技术部",
+  "member_ids": ["user1_id", "user2_id"]
+}
+```
+
+### AI助手接口
+
+#### 聊天对话
+```http
+POST /api/chat
+Content-Type: application/json
+Authorization: Bearer your-openai-api-key
+
+{
+  "model": "gpt-4",
+  "messages": [
+    {
+      "role": "user",
+      "content": "明天有什么会议安排？"
+    }
+  ]
+}
+```
+
+更多详细的API文档请参考：
+- [接口文档](./openSourceFront/接口.md)
+- [后端文档](./schedule-planner/backend/docs/)
+
+## 🚀 部署指南
+
+### Docker部署
+
+#### 1. 构建镜像
+
+```bash
+# 构建后端镜像
+docker build -t easymeeting-backend ./schedule-planner/backend
+
+# 构建前端镜像
+docker build -t easymeeting-frontend ./openSourceFront
+```
+
+#### 2. 运行容器
+
+```bash
+# 运行后端容器
+docker run -d -p 5000:5000 --name easymeeting-backend easymeeting-backend
+
+# 运行前端容器
+docker run -d -p 80:80 --name easymeeting-frontend easymeeting-frontend
+```
+
+### 生产环境部署
+
+#### 1. 后端部署
+
+```bash
+# 使用 Gunicorn 部署
+pip install gunicorn
+gunicorn -w 4 -b 0.0.0.0:5000 run:app
+
+# 使用 Nginx 反向代理
+# 配置 nginx.conf
+```
+
+#### 2. 前端部署
+
+```bash
+# 构建生产版本
+pnpm build
+
+# 部署到 Nginx
+# 将 dist 目录内容复制到 Nginx 静态文件目录
+```
+
+## 👨‍💻 开发指南
+
+### 代码规范
+
+- **前端**：使用 ESLint + Prettier 进行代码格式化
+- **后端**：遵循 PEP 8 Python代码规范
+- **提交信息**：使用 Conventional Commits 规范
+
+### 测试
+
+```bash
+# 后端测试
+cd schedule-planner/backend
+pytest
+
+# 前端测试
+cd openSourceFront
+pnpm test
+```
+
+### 开发流程
+
+1. Fork 项目
+2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 创建 Pull Request
+
+## 🤝 贡献指南
+
+我们欢迎所有形式的贡献！请查看以下指南：
+
+### 贡献类型
+
+- 🐛 **Bug修复**：报告和修复bug
+- ✨ **新功能**：添加新功能
+- 📚 **文档改进**：改进文档
+- 🎨 **UI/UX改进**：改进用户界面
+- ⚡ **性能优化**：优化性能
+- 🧪 **测试**：添加或改进测试
+
+### 贡献步骤
+
+1. Fork 项目
+2. 创建你的功能分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交你的更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 打开一个 Pull Request
+
+### 问题反馈
+
+如果你发现了bug或有功能建议，请：
+
+1. 检查现有的 [Issues](../../issues)
+2. 创建新的 Issue，并详细描述问题
+3. 提供复现步骤和期望行为
+
+## 📄 许可证
+
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+
+## 🙏 致谢
+
+感谢所有为这个项目做出贡献的开发者！
+
+### 主要贡献者
+
+- **唐震** - 项目架构师和主要开发者
+- **WithLei** - 参考项目 [MeetingReservation](https://github.com/WithLei/MeetingReservation)
+- **iwxyi** - 参考项目 [EasyMeeting_Android](https://github.com/iwxyi/EasyMeeting_Android)
+
+### 技术栈致谢
+
+- [Vue.js](https://vuejs.org/) - 渐进式JavaScript框架
+- [Element Plus](https://element-plus.org/) - Vue 3 UI组件库
+- [Flask](https://flask.palletsprojects.com/) - Python Web框架
+- [OpenAI](https://openai.com/) - AI服务提供商
+
+## 📞 联系我们
+
+- **项目主页**：[https://github.com/your-username/EasyMeeting](https://github.com/your-username/EasyMeeting)
+- **问题反馈**：[Issues](../../issues)
+- **邮箱**：your-email@example.com
+
+---
+
+<div align="center">
+
+**如果这个项目对你有帮助，请给它一个 ⭐️**
+
+Made with ❤️ by the EasyMeeting Team
+
+</div>
+
+## 🚀 快速开始
+
+### 环境要求
+
+- **Node.js** >= 16.0.0
+- **Python** >= 3.8
+- **pnpm** >= 7.0.0 (推荐) 或 npm >= 8.0.0
+
+### 1. 克隆项目
+
+```bash
+git clone https://github.com/your-username/EasyMeeting.git
+cd EasyMeeting
+```
+
+### 2. 后端环境配置
+
 ```bash
 # 进入后端目录
 cd schedule-planner/backend
 
+# 创建虚拟环境
+python -m venv venv
+
+# 激活虚拟环境
+# Windows
+venv\Scripts\activate
+# macOS/Linux
+source venv/bin/activate
+
 # 安装依赖
 pip install -r requirements.txt
 
-# 初始化数据库
-python -c "from app.models import init_db; init_db()"
+# 配置环境变量
+export SECRET_KEY="your-secret-key"
+export OPENAI_API_KEY="your-openai-api-key"
 
-# 运行开发服务器
+# 启动后端服务
 python run.py
 ```
 
-## 项目团队
-| 角色                        | 成员人数 | 姓名                       |
-| --------------------------- | -------- | -------------------------- |
-| **CEO（项目总负责人）**     | 1人      | 王毓祥                     |
-| **CPO（产品负责人）**       | 1人      | 廖炳衡                     |
-| **CTO（技术负责人）**       | 1人      | 张旭                       |
-| **CKO（知识与成长负责人）** | 1人      | 金建新                     |
-| **前端工程师**              | 2人      | 李博洋，虞果               |
-| **后端工程师**              | 4人      | 张旭，李正宇，钱睿澄，唐震 |
-| **测试工程师**              | 1人      | 夏意晨                     |
+后端服务将在 `http://localhost:5000` 启动
 
-### 项目主计划
-- 需求分析与规划阶段（2周）
-- 架构设计与技术选型阶段（1周）
-- 迭代开发阶段（8周）
-- 测试与优化阶段（2周）
-- 部署与上线阶段（1周）
+### 3. 前端环境配置
 
-### 协同工作制度
-- 每日站会：早上10点简短同步进度与问题
-- 代码审查：所有代码需通过PR提交并经至少1名团队成员审查
-- 文档先行：核心功能实现前需完成设计文档
-- 迭代周期：2周一个迭代，周末进行迭代回顾
+```bash
+# 进入前端目录
+cd openSourceFront
+
+# 安装依赖
+pnpm install
+# 或使用 npm
+npm install
+
+# 配置环境变量
+cp .env.example .env.local
+# 编辑 .env.local 文件，配置后端API地址
+
+# 启动开发服务器
+pnpm dev
+# 或使用 npm
+npm run dev
+```
+
+前端服务将在 `http://localhost:5173` 启动
+
+### 4. 访问应用
+
+打开浏览器访问 `http://localhost:5173` 即可使用应用。
+
+## 📚 API文档
+
+### 认证相关接口
+
+#### 用户登录
+```http
+POST /api/login
+Content-Type: application/json
+
+{
+  "phone": "13812345678",
+  "password": "123456"
+}
+```
+
+#### 用户注册
+```http
+POST /api/register
+Content-Type: application/json
+
+{
+  "nickname": "张三",
+  "phone": "13812345678",
+  "email": "zhangsan@example.com",
+  "password": "123456"
+}
+```
+
+### 会议管理接口
+
+#### 查找可用会议时间
+```http
+POST /api/meeting/find-time
+Content-Type: application/json
+
+{
+  "token": "your-auth-token",
+  "participant_ids": ["user1_id", "user2_id"],
+  "duration": 60,
+  "start_date": "2024-08-01",
+  "end_date": "2024-08-10"
+}
+```
+
+#### 创建会议
+```http
+POST /api/meeting/create
+Content-Type: application/json
+
+{
+  "token": "your-auth-token",
+  "title": "项目启动会",
+  "start_time": "2024-08-01 10:00:00",
+  "end_time": "2024-08-01 11:00:00",
+  "participant_ids": ["user1_id", "user2_id"]
+}
+```
+
+### 组织管理接口
+
+#### 创建组织
+```http
+POST /api/organization/create
+Content-Type: application/json
+
+{
+  "token": "your-auth-token",
+  "name": "技术部",
+  "member_ids": ["user1_id", "user2_id"]
+}
+```
+
+### AI助手接口
+
+#### 聊天对话
+```http
+POST /api/chat
+Content-Type: application/json
+Authorization: Bearer your-openai-api-key
+
+{
+  "model": "gpt-4",
+  "messages": [
+    {
+      "role": "user",
+      "content": "明天有什么会议安排？"
+    }
+  ]
+}
+```
+
+更多详细的API文档请参考：
+- [接口文档](./openSourceFront/接口.md)
+- [后端文档](./schedule-planner/backend/docs/)
+
+## 🚀 部署指南
+
+### Docker部署
+
+#### 1. 构建镜像
+
+```bash
+# 构建后端镜像
+docker build -t easymeeting-backend ./schedule-planner/backend
+
+# 构建前端镜像
+docker build -t easymeeting-frontend ./openSourceFront
+```
+
+#### 2. 运行容器
+
+```bash
+# 运行后端容器
+docker run -d -p 5000:5000 --name easymeeting-backend easymeeting-backend
+
+# 运行前端容器
+docker run -d -p 80:80 --name easymeeting-frontend easymeeting-frontend
+```
+
+### 生产环境部署
+
+#### 1. 后端部署
+
+```bash
+# 使用 Gunicorn 部署
+pip install gunicorn
+gunicorn -w 4 -b 0.0.0.0:5000 run:app
+
+# 使用 Nginx 反向代理
+# 配置 nginx.conf
+```
+
+#### 2. 前端部署
+
+```bash
+# 构建生产版本
+pnpm build
+
+# 部署到 Nginx
+# 将 dist 目录内容复制到 Nginx 静态文件目录
+```
+
+## 👨‍💻 开发指南
+
+### 代码规范
+
+- **前端**：使用 ESLint + Prettier 进行代码格式化
+- **后端**：遵循 PEP 8 Python代码规范
+- **提交信息**：使用 Conventional Commits 规范
+
+### 测试
+
+```bash
+# 后端测试
+cd schedule-planner/backend
+pytest
+
+# 前端测试
+cd openSourceFront
+pnpm test
+```
+
+### 开发流程
+
+1. Fork 项目
+2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 创建 Pull Request
+
+## 🤝 贡献指南
+
+我们欢迎所有形式的贡献！请查看以下指南：
+
+### 贡献类型
+
+- 🐛 **Bug修复**：报告和修复bug
+- ✨ **新功能**：添加新功能
+- 📚 **文档改进**：改进文档
+- 🎨 **UI/UX改进**：改进用户界面
+- ⚡ **性能优化**：优化性能
+- 🧪 **测试**：添加或改进测试
+
+### 贡献步骤
+
+1. Fork 项目
+2. 创建你的功能分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交你的更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 打开一个 Pull Request
+
+### 问题反馈
+
+如果你发现了bug或有功能建议，请：
+
+1. 检查现有的 [Issues](../../issues)
+2. 创建新的 Issue，并详细描述问题
+3. 提供复现步骤和期望行为
+
+## 📄 许可证
+
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+
+## 🙏 致谢
+
+感谢所有为这个项目做出贡献的开发者！
+
+### 主要贡献者
+
+- **唐震** - 项目架构师和主要开发者
+- **WithLei** - 参考项目 [MeetingReservation](https://github.com/WithLei/MeetingReservation)
+- **iwxyi** - 参考项目 [EasyMeeting_Android](https://github.com/iwxyi/EasyMeeting_Android)
+
+### 技术栈致谢
+
+- [Vue.js](https://vuejs.org/) - 渐进式JavaScript框架
+- [Element Plus](https://element-plus.org/) - Vue 3 UI组件库
+- [Flask](https://flask.palletsprojects.com/) - Python Web框架
+- [OpenAI](https://openai.com/) - AI服务提供商
+
+## 📞 联系我们
+
+- **项目主页**：[https://github.com/your-username/EasyMeeting](https://github.com/your-username/EasyMeeting)
+- **问题反馈**：[Issues](../../issues)
+- **邮箱**：your-email@example.com
+
+---
+
+<div align="center">
+
+**如果这个项目对你有帮助，请给它一个 ⭐️**
+
+Made with ❤️ by the EasyMeeting Team
+
+</div> 
