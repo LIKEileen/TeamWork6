@@ -479,8 +479,6 @@ Made with ❤️ by the EasyMeeting Team
 ### 主要贡献者
 
 - **唐震** - 项目架构师和主要开发者
-- **WithLei** - 参考项目 [MeetingReservation](https://github.com/WithLei/MeetingReservation)
-- **iwxyi** - 参考项目 [EasyMeeting_Android](https://github.com/iwxyi/EasyMeeting_Android)
 
 ### 技术栈致谢
 
