@@ -446,8 +446,6 @@ pnpm test
 ### 主要贡献者
 
 - **唐震** - 项目架构师和主要开发者
-- **WithLei** - 参考项目 [MeetingReservation](https://github.com/WithLei/MeetingReservation)
-- **iwxyi** - 参考项目 [EasyMeeting_Android](https://github.com/iwxyi/EasyMeeting_Android)
 
 ### 技术栈致谢
 
@@ -471,34 +469,3 @@ pnpm test
 Made with ❤️ by the EasyMeeting Team
 
 </div>
-
-## 🙏 致谢
-
-感谢所有为这个项目做出贡献的开发者！
-
-### 主要贡献者
-
-- **唐震** - 项目架构师和主要开发者
-
-### 技术栈致谢
-
-- [Vue.js](https://vuejs.org/) - 渐进式JavaScript框架
-- [Element Plus](https://element-plus.org/) - Vue 3 UI组件库
-- [Flask](https://flask.palletsprojects.com/) - Python Web框架
-- [OpenAI](https://openai.com/) - AI服务提供商
-
-## 📞 联系我们
-
-- **项目主页**：[https://github.com/your-username/EasyMeeting](https://github.com/your-username/EasyMeeting)
-- **问题反馈**：[Issues](../../issues)
-- **邮箱**：your-email@example.com
-
----
-
-<div align="center">
-
-**如果这个项目对你有帮助，请给它一个 ⭐️**
-
-Made with ❤️ by the EasyMeeting Team
-
-</div> 
