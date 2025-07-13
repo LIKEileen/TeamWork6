@@ -388,6 +388,8 @@ pnpm build
 <img width="1032" height="662" alt="6e33fee7cff553af2c72950b55b45e5" src="https://github.com/user-attachments/assets/a7642548-6a8c-4021-8b79-cf2b8d245ee1" />
 <img width="1034" height="599" alt="15826312173b70728b3a424ac1249dc" src="https://github.com/user-attachments/assets/64446c15-2d4d-4b0e-96f7-d3b52dc27b7e" />
 <img width="2044" height="1321" alt="image" src="https://github.com/user-attachments/assets/9ade00f8-8ced-46fd-8394-6d3a44a4d475" />
+<img width="2061" height="490" alt="image" src="https://github.com/user-attachments/assets/bc16c0ae-d798-4129-9222-67e8598dd6b9" />
+
 
 
 
