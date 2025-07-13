@@ -10,9 +10,9 @@
               <el-icon><Message /></el-icon> 邀请通知
             </el-button>
           </el-badge>
-          <el-button type="success" size="small" @click="showJoinOrgModal = true">
+          <!-- <el-button type="success" size="small" @click="showJoinOrgModal = true">
             <el-icon><Link /></el-icon> 申请加入
-          </el-button>
+          </el-button> -->
           <el-button type="primary" size="small" @click="showCreateModal = true">
             <el-icon><Plus /></el-icon> 创建组织
           </el-button>
@@ -21,13 +21,16 @@
 
       <!-- 组织列表 -->
       <div class="org-list-container">
-        <el-collapse v-model="expandedOrgId">
+        <el-collapse v-model="expandedOrgId"@change="handleCollapseChange">
           <el-collapse-item v-for="org in organizations" :key="org.id" :name="org.id">
             <template #title>
-              <div class="org-title" @contextmenu.prevent="openContextMenu($event, org)">
-                {{ org.name }}
-                <div class="org-members-count">{{ org.members.length }}人</div>
-              </div>
+                <div class="org-title" @contextmenu.prevent="openContextMenu($event, org)">
+                <span>
+                  {{ org.name }}
+                  <span style="font-size:12px; color:var(--text-secondary); margin-left:8px;">(ID: {{ org.id }})</span>
+                </span>
+                <div class="org-members-count">{{ org.memberCount }}人</div>
+                </div>
             </template>
             <div class="org-content">
               <div class="org-actions">
@@ -259,18 +262,17 @@
     <!-- 新增：申请加入组织弹窗 -->
     <el-dialog v-model="showJoinOrgModal" title="申请加入组织" width="400px">
       <el-form :model="joinOrgForm" ref="joinOrgFormRef" :rules="joinOrgRules">
-        <el-form-item label="组织ID" prop="orgId">
-          <el-input 
-            v-model="joinOrgForm.orgId" 
-            placeholder="请输入组织ID"
-            @keyup.enter="searchOrg"
-          >
-            <template #append>
-              <el-button @click="searchOrg">
-                <el-icon><Search /></el-icon>
-              </el-button>
-            </template>
-          </el-input>
+        <el-form-item label="组织ID" prop="orgId">            <el-input 
+              v-model="joinOrgForm.orgId" 
+              placeholder="请输入组织ID"
+              @keyup.enter="searchOrgById"
+            >
+              <template #append>
+                <el-button @click="searchOrgById">
+                  <el-icon><Search /></el-icon>
+                </el-button>
+              </template>
+            </el-input>
         </el-form-item>
         
         <!-- 搜索结果展示 -->
@@ -334,14 +336,14 @@
             <el-button 
               type="success" 
               size="small" 
-              @click="acceptInvitation(invitation)"
+              @click="acceptInvitationAction(invitation)"
               :loading="invitation.processing"
             >接受</el-button>
             <el-button 
               type="danger" 
               size="small" 
               plain
-              @click="rejectInvitation(invitation)"
+              @click="rejectInvitationAction(invitation)"
               :loading="invitation.processing"
             >拒绝</el-button>
           </div>
@@ -358,11 +360,29 @@
 </template>
 
 <script setup>
-import { ref, reactive, nextTick, computed } from 'vue'
+import { ref, reactive, nextTick, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { EditPen, Delete, UserFilled, Plus, Search, Link, Message } from '@element-plus/icons-vue'
 import defaultAvatarImg from '@/assets/default_icon.jpg'
+import { useUserStore } from '@/store/user'
+// 导入API接口
+import { 
+  getUserOrgs, 
+  getOrgDetail, 
+  createOrg, 
+  updateOrgName, 
+  deleteOrg, 
+  setOrgAdmins, 
+  searchUsers, 
+  inviteOrgMember, 
+  searchOrg, 
+  applyJoinOrg, 
+  acceptInvitation, 
+  rejectInvitation 
+} from '@/api/org'
+import { getUserInvitationsApi } from '@/api/user'
 
+const userStore = useUserStore()
 const expandedOrgId = ref([])
 const defaultAvatar = defaultAvatarImg // 直接使用导入的图片，不需要再用ref包装
 const showAdminModal = ref(false)
@@ -381,41 +401,85 @@ const newOrgForm = ref({
 const createFormRef = ref(null)
 const renameFormRef = ref(null)
 
-const organizations = ref([
-  {
-    id: 'org1',
-    name: '数据科学研究组',
-    members: [
-      { id: 'u1', name: '张教授', role: 'creator', avatarUrl: null },
-      { id: 'u2', name: '李研究员', role: 'admin', avatarUrl: null },
-      { id: 'u3', name: '王博士', role: 'admin', avatarUrl: null },
-      { id: 'u4', name: '陈同学', role: '', avatarUrl: null },
-      { id: 'u5', name: '林同学', role: '', avatarUrl: null }
-    ]
-  },
-  {
-    id: 'org2',
-    name: '软件开发小组',
-    members: [
-      { id: 'u6', name: '刘组长', role: 'creator', avatarUrl: null },
-      { id: 'u7', name: '杨开发', role: 'admin', avatarUrl: null },
-      { id: 'u8', name: '吴测试', role: '', avatarUrl: null },
-      { id: 'u9', name: '赵设计', role: '', avatarUrl: null }
-    ]
-  },
-  {
-    id: 'org3',
-    name: '学生会',
-    members: [
-      { id: 'u10', name: '朱主席', role: 'creator', avatarUrl: null },
-      { id: 'u11', name: '钱副主席', role: 'admin', avatarUrl: null },
-      { id: 'u12', name: '孙部长', role: 'admin', avatarUrl: null },
-      { id: 'u13', name: '周干事', role: '', avatarUrl: null },
-      { id: 'u14', name: '吴干事', role: '', avatarUrl: null },
-      { id: 'u15', name: '郑干事', role: '', avatarUrl: null }
-    ]
+const organizations = ref([])
+
+// 加载组织数据
+const loadOrganizations = async () => {
+  //console.log('--- 开始调用 loadOrganizations 函数 ---'); 
+  try {
+    // 直接获取用户的所有组织，而不是先调用单个组织详情
+   
+    const userRes= await getUserOrgs(userStore.token)
+    const userOrgsResponse = userRes.data
+    //console.log('API 返回的原始响应 (userOrgsResponse):', userOrgsResponse)
+    if (userOrgsResponse.code === 1) {
+      // 如果getUserOrgs返回的数据中包含详细的成员信息，直接使用
+      // 如果没有详细成员信息，可以为每个组织单独获取详情
+      //console.log('--- if 条件满足，进入数据处理逻辑 ---');
+      organizations.value = userOrgsResponse.data.map(org => ({
+        id: org.id,
+        name: org.name,
+        //members: org.members || [] // 如果没有详细成员信息，则为空数组
+        // 将数字数量转换为一个空数组，并在一个新字段中保存数量
+        members: [], // 让 org.members.length 不会报错
+        memberCount: org.members // 新增一个字段来保存真实的成员数
+      }))
+      //console.log('最终内容:', organizations.value)
+      // 如果需要详细的成员信息，可以为每个组织获取详情
+      // 但这可能会导致太多请求，建议后端优化getUserOrgs接口返回详细信息
+      /*
+      for (const org of organizations.value) {
+        try {
+          const detailResponse = await getOrgDetail(org.id)
+          if (detailResponse.code === 1) {
+            org.members = detailResponse.data.members || []
+          }
+        } catch (error) {
+          console.warn(`获取组织 ${org.id} 详情失败:`, error)
+        }
+      }
+      */
+    }
+  } catch (error) {
+    console.error('加载组织数据失败:', error)
+    // 服务器错误时不显示错误消息，避免影响用户体验
+    // ElMessage.error('加载组织数据失败')
   }
-])
+}
+// 组织详细信息
+const handleCollapseChange = async (activeNames) => {
+  // activeNames 是当前所有展开面板的 name (即 org.id) 组成的数组
+  if (!activeNames || activeNames.length === 0) return;
+
+  // 我们只处理最新展开的那个面板
+  const latestExpandedId = activeNames[activeNames.length - 1];
+  const org = organizations.value.find(o => o.id === latestExpandedId);
+
+  // 如果该组织存在，并且其成员尚未被加载过
+  if (org && !org.membersLoaded) {
+    try {
+      // 发起请求获取组织详情
+      const detailRes = await getOrgDetail(userStore.token,org.id);
+      //console.log('获取组织详情响应:', detailRes.data);
+      const detailResponse = detailRes.data;
+      if (detailResponse.code === 1) {
+        // 将获取到的成员列表赋值给该组织，并更新加载状态
+        org.members = detailResponse.data.members || [];
+        org.membersLoaded = true;
+      } else {
+        ElMessage.error(`获取组织 "${org.name}" 成员失败: ${detailResponse.message}`);
+      }
+    } catch (error) {
+      console.error('获取组织详情失败:', error);
+      ElMessage.error(`获取组织 "${org.name}" 成员失败`);
+    }
+  }
+};
+// 组件挂载时加载数据
+onMounted(() => {
+  loadOrganizations()
+  loadPendingInvitations()
+})
 
 // 表单校验规则
 const orgRules = {
@@ -467,17 +531,22 @@ const confirmRename = async () => {
   }
   
   try {
-    // 模拟API请求
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    // 更新本地数据
-    const org = organizations.value.find(o => o.id === renameForm.value.id)
-    if (org) {
-      org.name = renameForm.value.name
-      ElMessage.success('组织名称已更新')
-      showRenameModal.value = false
+    const res = await updateOrgName(renameForm.value.id, renameForm.value.name)
+    //console.log('更新组织名称响应:', res.data)
+    const response = res.data
+    if (response.code === 1) {
+      // 更新本地数据
+      const org = organizations.value.find(o => o.id === renameForm.value.id)
+      if (org) {
+        org.name = renameForm.value.name
+        ElMessage.success('组织名称已更新')
+        showRenameModal.value = false
+      }
+    } else {
+      ElMessage.error(response.message || '更新失败')
     }
   } catch (error) {
+    console.error('更新组织名称失败:', error)
     ElMessage.error('更新失败，请重试')
   }
 }
@@ -492,12 +561,20 @@ const confirmDelete = (org) => {
       cancelButtonText: '取消',
       type: 'warning'
     }
-  ).then(() => {
-    // 模拟API请求
-    setTimeout(() => {
-      organizations.value = organizations.value.filter(item => item.id !== org.id)
-      ElMessage.success('组织已删除')
-    }, 500)
+  ).then(async () => {
+    try {
+      const res = await deleteOrg(org.id)
+      const response = res.data
+      if (response.code === 1) {
+        organizations.value = organizations.value.filter(item => item.id !== org.id)
+        ElMessage.success('组织已删除')
+      } else {
+        ElMessage.error(response.message || '删除失败')
+      }
+    } catch (error) {
+      console.error('删除组织失败:', error)
+      ElMessage.error('删除失败，请重试')
+    }
   }).catch(() => {
     // 用户取消删除
   })
@@ -529,35 +606,56 @@ const orgSearchAttempted = ref(false)
 
 // 收到的邀请相关变量
 const showInvitationModal = ref(false)
-const pendingInvitations = ref([
-  {
-    id: 'inv1',
-    orgId: 'org4',
-    orgName: '人工智能实验室',
-    inviter: '黄教授',
-    inviteTime: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1天前
-    message: '我们正在组建AI研究团队，希望你能加入我们的组织。',
-    processing: false
-  },
-  {
-    id: 'inv2',
-    orgId: 'org5',
-    orgName: '数据分析小组',
-    inviter: '赵分析师',
-    inviteTime: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2小时前
-    message: '',
-    processing: false
-  },
-  {
-    id: 'inv3',
-    orgId: 'org6',
-    orgName: '前端开发团队',
-    inviter: '李工程师',
-    inviteTime: new Date(Date.now() - 30 * 60 * 1000), // 30分钟前
-    message: '看到你有Vue的经验，想邀请你加入我们的前端团队。',
-    processing: false
+const pendingInvitations = ref([])
+
+
+const loadPendingInvitations = async () => {
+  try {
+    // 1. 直接调用正确的 API 函数，它内部会处理好所有请求细节（POST, body, token等）。
+    //    这里的 response 就是 axios 成功响应后返回的【整个响应对象】。
+    //    例如：{ data: { code: 1, message: 'success', data: [...] }, status: 200, ... }
+    const response = await getUserInvitationsApi()
+
+    // 2. 检查业务层面的成功状态。
+    //    虽然 request.js 的拦截器处理了网络层和大部分业务失败的情况，
+    //    但在这里再做一次检查是更稳妥的做法。
+    //    注意：我们从 response.data 中解构出真正的业务数据。
+    const { code, data, message } = response.data
+    //console.log('获取邀请列表响应:', response.data)
+
+    if (code === 1) {
+      // 3. 业务成功，处理数据。
+      //    如果 data 不存在或是个空数组，.map 会优雅地处理，返回一个空数组。
+      pendingInvitations.value = (data || []).map(invitation => ({
+        ...invitation,
+        // 将后端返回的时间字符串转为 Date 对象，便于后续处理
+        inviteTime: new Date(invitation.inviteTime || Date.now()), 
+        // 使用后端返回的 inviter 字段，如果不存在则显示 '未知'
+        inviter: invitation.inviter || '未知', 
+        processing: false // 为UI交互添加一个状态位
+      }))
+    } else {
+      // 4. 业务失败（例如 code=0），但网络请求是成功的（2xx status）。
+      //    这种情况虽然少见（因为拦截器会处理），但还是可以处理一下。
+      //    给用户一个提示。
+      console.warn('获取邀请列表失败:', message)
+      ElMessage.warning(`获取邀请列表失败: ${message || '未知错误'}`)
+      pendingInvitations.value = []
+    }
+
+  } catch (error) {
+    // 5. 捕获错误。
+    //    能进入 catch 块的，通常是 request.js 的拦截器抛出的错误，
+    //    例如网络中断、服务器5xx/4xx错误等。
+    //    拦截器已经用 ElMessage.error 弹出了通用错误提示，
+    //    所以这里主要做一些清理工作和在控制台记录详细错误。
+    console.error('加载邀请失败 (在 catch 块中捕获):', error)
+    pendingInvitations.value = [] // 清空列表，避免UI显示旧数据
+    
+    // （可选）如果想在这里显示更具体的提示，也可以，但可能会和拦截器的提示重复。
+    // ElMessage.error('加载邀请数据时遇到问题，请稍后重试。')
   }
-])
+}
 
 // 格式化日期
 const formatDate = (date) => {
@@ -579,35 +677,40 @@ const formatDate = (date) => {
 }
 
 // 接受邀请
-const acceptInvitation = async (invitation) => {
+const acceptInvitationAction = async (invitation) => {
   try {
     invitation.processing = true
-    // 模拟API请求
-    await new Promise(resolve => setTimeout(resolve, 800))
+    const res = await acceptInvitation(invitation.id)
+    const response = res.data
     
-    // 在实际应用中，这里应该调用API将用户添加到组织
-    // 添加一个新的组织到用户的组织列表
-    const newOrg = {
-      id: invitation.orgId,
-      name: invitation.orgName,
-      members: [
-        { id: 'u100', name: invitation.inviter, role: 'creator', avatarUrl: null },
-        // 假设当前用户ID是u1，名称是"当前用户"
-        { id: 'u1', name: '当前用户', role: '', avatarUrl: null }
-      ]
+    if (response.code === 1) {
+      // 在实际应用中，这里应该调用API将用户添加到组织
+      // 添加一个新的组织到用户的组织列表
+      const newOrg = {
+        id: invitation.orgId,
+        name: invitation.orgName,
+        members: [
+          { id: 'u100', name: invitation.inviter, role: 'creator', avatarUrl: null },
+          // 假设当前用户ID是u1，名称是"当前用户"
+          { id: 'u1', name: '当前用户', role: '', avatarUrl: null }
+        ]
+      }
+      
+      // 检查是否已存在该组织
+      const existingOrgIndex = organizations.value.findIndex(org => org.id === invitation.orgId)
+      if (existingOrgIndex === -1) {
+        organizations.value.push(newOrg)
+      }
+      
+      // 从邀请列表中移除
+      pendingInvitations.value = pendingInvitations.value.filter(item => item.id !== invitation.id)
+      
+      ElMessage.success(`已加入组织: ${invitation.orgName}`)
+    } else {
+      ElMessage.error(response.message || '加入组织失败')
     }
-    
-    // 检查是否已存在该组织
-    const existingOrgIndex = organizations.value.findIndex(org => org.id === invitation.orgId)
-    if (existingOrgIndex === -1) {
-      organizations.value.push(newOrg)
-    }
-    
-    // 从邀请列表中移除
-    pendingInvitations.value = pendingInvitations.value.filter(item => item.id !== invitation.id)
-    
-    ElMessage.success(`已加入组织: ${invitation.orgName}`)
   } catch (error) {
+    console.error('接受邀请失败:', error)
     ElMessage.error('加入组织失败，请重试')
   } finally {
     invitation.processing = false
@@ -615,17 +718,21 @@ const acceptInvitation = async (invitation) => {
 }
 
 // 拒绝邀请
-const rejectInvitation = async (invitation) => {
+const rejectInvitationAction = async (invitation) => {
   try {
     invitation.processing = true
-    // 模拟API请求
-    await new Promise(resolve => setTimeout(resolve, 500))
+    const res = await rejectInvitation(invitation.id)
+    const response = res.data
     
-    // 从邀请列表中移除
-    pendingInvitations.value = pendingInvitations.value.filter(item => item.id !== invitation.id)
-    
-    ElMessage.success('已拒绝邀请')
+    if (response.code === 1) {
+      // 从邀请列表中移除
+      pendingInvitations.value = pendingInvitations.value.filter(item => item.id !== invitation.id)
+      ElMessage.success('已拒绝邀请')
+    } else {
+      ElMessage.error(response.message || '操作失败')
+    }
   } catch (error) {
+    console.error('拒绝邀请失败:', error)
     ElMessage.error('操作失败，请重试')
   } finally {
     invitation.processing = false
@@ -664,20 +771,32 @@ const setAdmins = (org) => {
 // 保存管理员设置
 const saveAdmins = async () => {
   try {
-    // 模拟API请求
-    await new Promise(resolve => setTimeout(resolve, 500))
+    // 获取选中的管理员ID
+    const adminIds = []
+    for (const id in adminStatusMap.value) {
+      if (adminStatusMap.value[id]) {
+        adminIds.push(id)
+      }
+    }
     
-    // 更新本地数据
-    if (currentOrg.value) {
-      currentOrg.value.members.forEach(member => {
-        if (member.role !== 'creator') {
-          member.role = adminStatusMap.value[member.id] ? 'admin' : ''
-        }
-      })
-      ElMessage.success('管理员设置已更新')
-      showAdminModal.value = false
+    const res = await setOrgAdmins(currentOrg.value.id, adminIds)
+    const response = res.data
+    if (response.code === 1) {
+      // 更新本地数据
+      if (currentOrg.value) {
+        currentOrg.value.members.forEach(member => {
+          if (member.role !== 'creator') {
+            member.role = adminStatusMap.value[member.id] ? 'admin' : ''
+          }
+        })
+        ElMessage.success('管理员设置已更新')
+        showAdminModal.value = false
+      }
+    } else {
+      ElMessage.error(response.message || '设置失败')
     }
   } catch (error) {
+    console.error('设置管理员失败:', error)
     ElMessage.error('设置失败，请重试')
   }
 }
@@ -699,20 +818,16 @@ const searchUser = async () => {
   }
 
   try {
-    // 模拟API请求
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    // 模拟搜索结果
-    searchResults.value = [
-      { id: 'u20', name: '张三', avatarUrl: null },
-      { id: 'u21', name: '李四', avatarUrl: null },
-      { id: 'u22', name: '王五', avatarUrl: null }
-    ].filter(user => 
-      user.name.includes(addMemberForm.value.searchText) || 
-      user.id.includes(addMemberForm.value.searchText)
-    )
-    searchAttempted.value = true
+    const res = await searchUsers(userStore.token,addMemberForm.value.searchText)
+    const response = res.data
+    if (response.code === 1) {
+      searchResults.value = response.data
+      searchAttempted.value = true
+    } else {
+      ElMessage.error(response.message || '搜索失败')
+    }
   } catch (error) {
+    console.error('搜索用户失败:', error)
     ElMessage.error('搜索用户失败，请重试')
   }
 }
@@ -731,50 +846,52 @@ const inviteUser = (user) => {
 // 确认邀请
 const confirmInvite = async () => {
   try {
-    // 模拟API请求
-    await new Promise(resolve => setTimeout(resolve, 700))
+    const res = await inviteOrgMember(currentOrg.value.id, pendingInvite.value.id)
+    const response = res.data
     
-    // 添加用户到组织
-    if (currentOrg.value && pendingInvite.value) {
-      currentOrg.value.members.push({
-        id: pendingInvite.value.id,
-        name: pendingInvite.value.name,
-        role: '',
-        avatarUrl: pendingInvite.value.avatarUrl
-      })
-      
-      ElMessage.success(`已成功邀请 ${pendingInvite.value.name} 加入组织`)
-      showInviteConfirmModal.value = false
-      // 关闭搜索弹窗
-      showAddMemberModal.value = false
-    }
+      // 添加用户到组织
+      if (currentOrg.value && pendingInvite.value) {
+        currentOrg.value.members.push({
+          id: pendingInvite.value.id,
+          name: pendingInvite.value.name,
+          role: '',
+          avatarUrl: pendingInvite.value.avatarUrl
+        })
+        
+        ElMessage.success(`已成功邀请 ${pendingInvite.value.name} 加入组织`)
+        showInviteConfirmModal.value = false
+        // 关闭搜索弹窗
+        showAddMemberModal.value = false
+      }
   } catch (error) {
-    ElMessage.error('邀请失败，请重试')
+    //ElMessage.error(response.message || '邀请失败')
+  //   console.error('邀请失败:', error)
+  //   ElMessage.error('邀请失败，请重试')
   }
 }
 
 // 搜索组织
-const searchOrg = async () => {
+const searchOrgById = async () => {
   if (!joinOrgForm.value.orgId.trim()) {
     ElMessage.warning('请输入组织ID')
     return
   }
 
   try {
-    // 模拟API请求
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    // 根据ID查找组织（模拟数据）
-    const orgId = joinOrgForm.value.orgId.trim()
-    const foundOrg = organizations.value.find(org => org.id === orgId)
-    
-    orgSearchResult.value = foundOrg
-    orgSearchAttempted.value = true
-    
-    if (!foundOrg) {
-      ElMessage.info('未找到该组织，请检查ID是否正确')
+    const res = await searchOrg(joinOrgForm.value.orgId.trim())
+    const response = res.data
+    if (response.code === 1) {
+      orgSearchResult.value = response.data
+      orgSearchAttempted.value = true
+      
+      if (!response.data) {
+        ElMessage.info('未找到该组织，请检查ID是否正确')
+      }
+    } else {
+      ElMessage.error(response.message || '搜索失败')
     }
   } catch (error) {
+    console.error('搜索组织失败:', error)
     ElMessage.error('搜索组织失败，请重试')
   }
 }
@@ -797,21 +914,24 @@ const submitJoinRequest = async () => {
   if (!orgSearchResult.value) return
   
   try {
-    // 模拟API请求
-    await new Promise(resolve => setTimeout(resolve, 800))
-    
-    ElMessage.success({
-      message: `已向 ${orgSearchResult.value.name} 提交加入申请，请等待管理员审核`,
-      duration: 3000
-    })
-    
-    // 重置表单和搜索结果
-    joinOrgForm.value.orgId = ''
-    joinOrgForm.value.message = ''
-    orgSearchResult.value = null
-    orgSearchAttempted.value = false
-    showJoinOrgModal.value = false
+    const response = await applyJoinOrg(orgSearchResult.value.id, joinOrgForm.value.message)
+    if (response.code === 1) {
+      ElMessage.success({
+        message: `已向 ${orgSearchResult.value.name} 提交加入申请，请等待管理员审核`,
+        duration: 3000
+      })
+      
+      // 重置表单和搜索结果
+      joinOrgForm.value.orgId = ''
+      joinOrgForm.value.message = ''
+      orgSearchResult.value = null
+      orgSearchAttempted.value = false
+      showJoinOrgModal.value = false
+    } else {
+      ElMessage.error(response.message || '提交申请失败')
+    }
   } catch (error) {
+    console.error('提交加入申请失败:', error)
     ElMessage.error('提交申请失败，请重试')
   }
 }
@@ -829,47 +949,56 @@ const searchUserForNewOrg = async () => {
   }
 
   try {
-    // 模拟API请求
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    // 模拟搜索结果
-    const searchText = newOrgForm.value.searchText.toLowerCase()
-    const possibleUsers = [
-      { id: 'u20', name: '张三', avatarUrl: null, selected: false },
-      { id: 'u21', name: '李四', avatarUrl: null, selected: false },
-      { id: 'u22', name: '王五', avatarUrl: null, selected: false },
-      { id: 'u23', name: '赵六', avatarUrl: null, selected: false },
-      { id: 'u24', name: '孙七', avatarUrl: null, selected: false }
-    ]
-    
-    const results = possibleUsers.filter(user => 
-      user.name.toLowerCase().includes(searchText) || 
-      user.id.toLowerCase().includes(searchText)
-    )
-    
-    // 保留已选中的用户
-    const selectedUserIds = newOrgSearchResults.value
-      .filter(u => u.selected)
-      .map(u => u.id)
-    
-    results.forEach(user => {
-      if (selectedUserIds.includes(user.id)) {
-        user.selected = true
+    const token = userStore.token; 
+    const res = await searchUsers(token,newOrgForm.value.searchText)
+    const response = res.data
+    //console.log('搜索用户响应:', response)
+    if (response.code === 1) {
+      // 保留已选中的用户
+      const selectedUserIds = newOrgSearchResults.value
+        .filter(u => u.selected)
+        .map(u => u.id)
+      
+      const results = response.data.map(user => ({
+        ...user,
+        selected: selectedUserIds.includes(user.id)
+      }))
+      
+      // 将新结果与已有结果合并，去重
+      const existingIds = newOrgSearchResults.value.map(u => u.id)
+      const newUsers = results.filter(user => !existingIds.includes(user.id))
+      
+      newOrgSearchResults.value = [...newOrgSearchResults.value, ...newUsers]
+      newOrgSearchAttempted.value = true
+      
+      if (results.length === 0 && newOrgSearchResults.value.length === 0) {
+        ElMessage.info('未找到匹配的用户')
       }
-    })
-    
-    // 将新结果与已有结果合并，去重
-    const existingIds = newOrgSearchResults.value.map(u => u.id)
-    const newUsers = results.filter(user => !existingIds.includes(user.id))
-    
-    newOrgSearchResults.value = [...newOrgSearchResults.value, ...newUsers]
-    newOrgSearchAttempted.value = true
-    
-    if (results.length === 0) {
-      ElMessage.info('未找到匹配的用户')
+    } else {
+      ElMessage.error(response.message || '搜索失败')
     }
   } catch (error) {
-    ElMessage.error('搜索用户失败，请重试')
+    console.error('搜索用户失败:', error)
+    //ElMessage.error('搜索用户失败，请重试')
+    
+    // 添加详细的错误信息
+    let errorMessage = '搜索用户失败，请重试';
+    
+    if (error.response) {
+      // 处理 415 错误
+      if (error.response.status === 415) {
+        errorMessage = '请求格式错误: 请确保 Content-Type 设置为 application/json';
+      } else {
+        errorMessage = `服务器错误: ${error.response.status} ${error.response.statusText}`;
+      }
+    } else if (error.request) {
+      errorMessage = '网络错误: 请求未发送或未收到响应';
+    } else {
+      errorMessage = `客户端错误: ${error.message}`;
+    }
+    
+    ElMessage.error(errorMessage)
+
   }
 }
 
@@ -909,43 +1038,32 @@ const submitNewOrg = async () => {
   }
   
   try {
-    // 模拟API请求
-    await new Promise(resolve => setTimeout(resolve, 800))
-    
-    // 获取选中的用户
+    // 获取选中的用户ID
     const selectedUsers = getSelectedUsers()
+    const memberIds = selectedUsers.map(user => user.id)
     
-    // 创建新组织并添加到列表
-    const newOrg = {
-      id: 'org' + (organizations.value.length + 1),
-      name: newOrgForm.value.name,
-      members: [
-        { id: 'u' + Date.now(), name: '当前用户', role: 'creator', avatarUrl: null }
-      ]
-    }
     
-    // 添加选中的成员
-    selectedUsers.forEach(user => {
-      newOrg.members.push({
-        id: user.id,
-        name: user.name,
-        role: '',
-        avatarUrl: user.avatarUrl
-      })
-    })
+    const res = await createOrg(newOrgForm.value.name, memberIds)
+    const response = res.data
     
-    organizations.value.push(newOrg)
-    
-    // 显示成功消息
-    if (selectedUsers.length > 0) {
-      ElMessage.success(`组织创建成功，已邀请 ${selectedUsers.length} 名成员`)
+    if (response.code === 1) {
+      // 添加新组织到列表
+      organizations.value.push(response.data)
+      
+      // 显示成功消息
+      if (selectedUsers.length > 0) {
+        ElMessage.success(`组织创建成功，已邀请 ${selectedUsers.length} 名成员`)
+      } else {
+        ElMessage.success('组织创建成功')
+      }
+      
+      // 重置表单和关闭弹窗
+      cancelCreateOrg()
     } else {
-      ElMessage.success('组织创建成功')
+      ElMessage.error(response.message || '创建失败')
     }
-    
-    // 重置表单和关闭弹窗
-    cancelCreateOrg()
   } catch (error) {
+    console.error('创建组织失败:', error)
     ElMessage.error('创建失败，请重试')
   }
 }
