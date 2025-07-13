@@ -6,6 +6,7 @@
 - 使用方式：
 1.本地端口与服务器端口做映射
 ssh -L 5173:localhost:5173 root@47.99.171.202
+
 2.访问网址
 http://localhost:5173/login
 - 测试账号：
