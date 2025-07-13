@@ -381,6 +381,7 @@ pnpm build
 
 ## 效果展示
 登录注册: 账号登录或快速注册，一步完成身份验证。
+
 <img width="369" height="371" alt="605aca43249a820ce970076835d94a6" src="https://github.com/user-attachments/assets/91a14568-20db-48a4-abd4-335582e544b8" />
 <img width="400" height="486" alt="3a3cbcd1679a4df975be485e0e5f5af" src="https://github.com/user-attachments/assets/4d96879a-af83-4d0c-84b7-008a27700a8e" />
 <img width="2037" height="1266" alt="image" src="https://github.com/user-attachments/assets/72121e50-9b7e-4667-9d5b-2c3899ce3bc3" />
