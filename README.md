@@ -399,7 +399,12 @@ pnpm build
 我的日程: 手动或 Excel 导入事件，以半小时为粒度，自定义颜色。
 
 <img width="2044" height="1321" alt="image" src="https://github.com/user-attachments/assets/9ade00f8-8ced-46fd-8394-6d3a44a4d475" />
+
+我的组织: 查看成员列表，右上角处理待审邀请，一键发邀请给新人。
+
 <img width="2463" height="1410" alt="image" src="https://github.com/user-attachments/assets/7bb9fdac-2223-49be-8b07-acedcaf847ca" />
+
+大模型聊天: 配置 API 后即可与模型对话。
 
 
 
