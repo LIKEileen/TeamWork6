@@ -264,7 +264,7 @@ def bind_phone_route():
             'message': '服务器内部错误'
         }), 500
 
-@user_bp.route('/user/orglist', methods=['GET'])
+@user_bp.route('/user/orglist', methods=['POST'])
 def get_user_organization_list():
     """获取用户组织列表"""
     try:

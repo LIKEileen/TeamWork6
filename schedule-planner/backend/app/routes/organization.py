@@ -24,7 +24,7 @@ def validate_request_data(data, required_fields):
     
     return True, "验证通过"
 
-@organization_bp.route('/org/<org_id>', methods=['GET'])
+@organization_bp.route('/org/<org_id>', methods=['POST'])
 def get_organization_details(org_id):
     """获取组织详情"""
     try:
@@ -348,7 +348,7 @@ def handle_join_request(request_id, action):
             'success': False
         }), 500
 
-@organization_bp.route('/users/search', methods=['GET'])
+@organization_bp.route('/users/search', methods=['POST'])
 def search_users():
     """搜索用户"""
     try:
@@ -425,7 +425,7 @@ def invite_user_to_organization(org_id):
             'success': False
         }), 500
 
-@organization_bp.route('/user/invitations', methods=['GET'])
+@organization_bp.route('/user/invitations', methods=['POST'])
 def get_user_invitations():
     """获取用户收到的邀请"""
     try:
@@ -493,7 +493,7 @@ def handle_invitation(invitation_id, action):
             'success': False
         }), 500
 
-@organization_bp.route('/heatmap/<string:org_id>', methods=['GET'])
+@organization_bp.route('/heatmap/<string:org_id>', methods=['POST'])
 def get_organization_heatmap(org_id):
     """获取组织热力图"""
     try:

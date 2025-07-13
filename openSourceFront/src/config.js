@@ -1,1 +1,1 @@
-export const IS_DEV = true // 设置为 false 切换到真实后端模式
+export const IS_DEV = false // 设置为 true 使用模拟数据，false 切换到真实后端模式

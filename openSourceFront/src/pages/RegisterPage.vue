@@ -113,9 +113,11 @@ const handleRegister = () => {
     try {
       const { data } = await register(payload)
       userStore.setUserInfo(data.data)
+      // console.log(data)
       ElMessage.success('注册成功')
       router.push('/dashboard')
     } catch (err) {
+      console.log(err)
       ElMessage.error('注册失败，请重试')
     }
   })

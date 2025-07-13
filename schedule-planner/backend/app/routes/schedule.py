@@ -32,22 +32,24 @@ def validate_request_data(data, required_fields):
     
     return True, "验证通过"
 
-@schedule_bp.route('/user/schedule', methods=['GET'])
+@schedule_bp.route('/user/schedule', methods=['POST'])
 def get_user_schedule():
     """获取用户日程列表"""
     try:
-        # 从查询参数获取token和可选的日期范围
-        token = request.args.get('token')
-        start_date = request.args.get('start_date')
-        end_date = request.args.get('end_date')
+        data = request.get_json()
         
-        # 验证token
-        if not token or token.strip() == '':
+        # 验证必填字段
+        valid, message = validate_request_data(data, ['token'])
+        if not valid:
             return jsonify({
                 'code': 0,
-                'message': '缺少必填字段: token',
+                'message': message,
                 'data': []
             }), 400
+        
+        token = data.get('token')
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
         
         schedules, message = get_user_schedule_list(token, start_date, end_date)
         
@@ -323,4 +325,3 @@ def import_excel():
             'code': 0,
             'message': f'导入失败: {str(e)}'
         }), 500
-

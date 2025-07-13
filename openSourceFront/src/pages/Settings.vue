@@ -317,11 +317,11 @@ const saveLLMConfig = () => {
     return
   }
   // 模拟调用后端接口
-  saveLLMConfigApi(llmConfig.value).then(() => {
-    ElMessage.success('大模型配置已保存')
-  }).catch(() => {
-    ElMessage.error('保存失败')
-  })
+  // saveLLMConfigApi(llmConfig.value).then(() => {
+  //   ElMessage.success('大模型配置已保存')
+  // }).catch(() => {
+  //   ElMessage.error('保存失败')
+  // })
 }
 
 // 修改密码功能
@@ -357,12 +357,12 @@ const handleChangePassword = async () => {
 onMounted(() => {
   const local = localStorage.getItem('llm_config')
   if (local) llmConfig.value = JSON.parse(local)
-  getLLMConfigApi().then(({ data }) => {
-    if (data) {
-      llmConfig.value = data
-      localStorage.setItem('llm_config', JSON.stringify(data))
-    }
-  })
+  // getLLMConfigApi().then(({ data }) => {
+  //   if (data) {
+  //     llmConfig.value = data
+  //     localStorage.setItem('llm_config', JSON.stringify(data))
+  //   }
+  // })
 })
 
 const inputStyle = computed(() => {

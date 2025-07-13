@@ -1,5 +1,6 @@
 import request from '@/utils/request'
 import { IS_DEV } from '@/config'
+import { useUserStore } from '@/store/user'
 
 export const updateUserInfo = (data) => {
   return request.post('/api/user/update', data)
@@ -41,16 +42,25 @@ export const getUserScheduleApi = (token) => {
       })
     })
   } else {
+    const userStore = useUserStore()
+    // 从 Pinia store 中获取 token，这是最佳实践
+    const token = userStore.token || localStorage.getItem('token')
+    
+    // 使用 axios 的通用请求方式来发送带 body 的 GET 请求
     return request({
       url: '/api/user/schedule',
-      method: 'get',
-      headers: { Authorization: token }
+      method: 'post',
+      
+      data: { // 将 token 放入 data 字段，axios 会将其作为请求体
+        token: token
+      },
+      //skipAuth: true // ！！！告诉拦截器，跳过为这个请求添加 Authorization 头
     })
   }
 }
 
 // 添加单个事件
-export const addEventApi = (token, eventData) => {
+export const addEventApi = (eventData) => {
   if (IS_DEV) {
     return new Promise((resolve) => {
       console.log('模拟添加事件：', eventData)
@@ -60,7 +70,7 @@ export const addEventApi = (token, eventData) => {
     return request({
       url: '/api/user/schedule/add',
       method: 'post',
-      headers: { Authorization: token },
+      // headers: { Authorization: token },
       data: eventData
     })
   }
@@ -109,11 +119,14 @@ export const importScheduleExcelApi = (token, file) => {
     })
   } else {
     const formData = new FormData()
-    formData.append('file', file)
+    formData.append('token', token); // ！！！将 token 也作为表单字段！！！
+    formData.append('file', file);
+    
+
     return request({
       url: '/api/user/schedule/import/excel',
       method: 'post',
-      headers: { Authorization: token },
+      //headers: { Authorization: token },
       data: formData
     })
   }
@@ -149,6 +162,51 @@ export const addRecurringEventApi = (token, recurringData) => {
       method: 'post',
       headers: { Authorization: token },
       data: recurringData
+    })
+  }
+}
+
+// 获取收到的组织邀请
+export const getUserInvitationsApi = (token) => {
+  if (IS_DEV) {
+    return new Promise((resolve) => {
+      resolve({
+        code: 1,
+        message: 'success',
+        data: [
+          {
+            id: 'inv1',
+            orgId: 'org1',
+            orgName: '人工智能实验室',
+            inviterName: '张三',
+            inviterAvatar: '/assets/demo_icon.jpg',
+            createdAt: '2025-01-15T10:30:00Z'
+          },
+          {
+            id: 'inv2',
+            orgId: 'org2',
+            orgName: '数据科学研究组',
+            inviterName: '李四',
+            inviterAvatar: '/assets/demo_icon_.jpg',
+            createdAt: '2025-01-14T14:20:00Z'
+          }
+        ]
+      })
+    })
+  } else {
+    const userStore = useUserStore()
+    const token = userStore.token || localStorage.getItem('token')
+    
+    return request({
+      url: '/api/user/invitations',
+      method: 'post',
+      data: { 
+        token: token
+      },
+      headers: { // ！！！添加这一部分！！！
+        'Content-Type': 'application/json'
+      },
+      skipAuth: true
     })
   }
 }

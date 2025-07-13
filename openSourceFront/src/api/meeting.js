@@ -62,3 +62,12 @@ export const createMeetingApi = (meetingData) => {
     })
   }
 }
+
+// 查找可用会议时间
+export const findAvailableMeetingTimeApi = (data) => {
+  return request({
+    url: '/api/meeting/find-time',
+    method: 'post',
+    data
+  })
+}

@@ -11,3 +11,8 @@ app.use(router)
 app.use(createPinia())
 app.use(ElementPlus)
 app.mount('#app')
+
+// router.afterEach((to) => {
+//     // 优先取路由 meta.title，没有则用默认标题
+//     document.title = to.meta.title || 'Ciallo～ (∠・ω< )⌒★';
+//   });

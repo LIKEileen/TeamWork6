@@ -12,8 +12,8 @@ export const bindPhone = (payload) => {
   return request.post('/api/bind', payload)
 }
 
-export const logout = () => {
-  return request.post('/api/logout')
+export const logout = (payload) => {
+  return request.post('/api/logout', payload)
 }
 
 export const sendVerificationCodeApi = (data) => {

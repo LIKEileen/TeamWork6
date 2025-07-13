@@ -1,5 +1,6 @@
 import request from '@/utils/request'
 import { IS_DEV } from '@/config'
+import { useUserStore } from '@/store/user'
 
 // 获取用户的组织列表
 export const getUserOrgs = (token) => {
@@ -33,8 +34,8 @@ export const getUserOrgs = (token) => {
 }
 
 // 获取组织热力图数据
-export const getOrgHeatmap = (orgId) => {
-  if (IS_DEV) {
+export const getOrgHeatmap = (orgId, start, end, token) => {
+  if (false) {
     // 模拟数据
     if (orgId === 1) {
       const rows = 24
@@ -82,11 +83,23 @@ export const getOrgHeatmap = (orgId) => {
       })
     })
   }
-  return request.get(`/api/heatmap/${orgId}`)
+  // return request.post(`/api/heatmap/${orgId}`)
+  return request({
+    method: 'post',
+    url: `/api/heatmap/${orgId}`,
+    params: { start_date: start, end_date: end }, // 使用 params 而不是 data
+    data: {
+      token: token
+    },
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    skipAuth: true
+})
 }
 
 // 获取组织详情
-export const getOrgDetail = (orgId) => {
+export const getOrgDetail = (token, orgId) => {
   if (IS_DEV) {
     // 模拟数据
     return new Promise((resolve) => {
@@ -109,7 +122,7 @@ export const getOrgDetail = (orgId) => {
       }, 300)
     })
   }
-  return request.get(`/api/org/${orgId}`)
+  return request.post(`/api/org/${orgId}`, { token })
 }
 
 // 创建组织
@@ -133,7 +146,13 @@ export const createOrg = (name, members = []) => {
       }, 500)
     })
   }
-  return request.post('/api/org', { name, members })
+  // 1. 获取 Pinia store 的实例
+  const userStore = useUserStore()
+  // 2. 从 store 或 localStorage 中获取 token，并赋值给一个常量
+  const token = userStore.token || localStorage.getItem('token')
+
+  // 3. 在 post 请求的第二个参数（请求体对象）中，包含 token
+  return request.post('/api/org', { name, members,token: token })
 }
 
 // 更新组织名称
@@ -150,7 +169,21 @@ export const updateOrgName = (orgId, name) => {
       }, 300)
     })
   }
-  return request.put(`/api/org/${orgId}`, { name })
+  const userStore = useUserStore()
+  const token = userStore.token || localStorage.getItem('token')
+  return request({
+      method: 'put',
+      url: `/api/org/${orgId}`,
+      data: { // 在 DELETE 请求中加入请求体
+        name: name,
+        token: token,
+      },
+      headers: { // 同样，明确指定 Content-Type
+          'Content-Type': 'application/json'
+      },
+      skipAuth: true // 跳过拦截器自动添加的 Authorization 头
+  })
+  //return request.put(`/api/org/${orgId}`, { name })
 }
 
 // 删除组织
@@ -167,7 +200,20 @@ export const deleteOrg = (orgId) => {
       }, 500)
     })
   }
-  return request.delete(`/api/org/${orgId}`)
+  //return request.delete(`/api/org/${orgId}`)
+  const userStore = useUserStore()
+  const token = userStore.token || localStorage.getItem('token')
+  return request({
+      method: 'delete',
+      url: `/api/org/${orgId}`,
+      data: { // 在 DELETE 请求中加入请求体
+          token: token
+      },
+      headers: { // 同样，明确指定 Content-Type
+          'Content-Type': 'application/json'
+      },
+      skipAuth: true // 跳过拦截器自动添加的 Authorization 头
+  })
 }
 
 // 设置管理员
@@ -184,11 +230,25 @@ export const setOrgAdmins = (orgId, adminIds) => {
       }, 400)
     })
   }
-  return request.post(`/api/org/${orgId}/admins`, { adminIds })
+  const userStore = useUserStore()
+  const token = userStore.token || localStorage.getItem('token')
+  return request({
+      method: 'post',
+      url: `/api/org/${orgId}/admins`,
+      data: { // 在 DELETE 请求中加入请求体
+        adminIds: adminIds,
+        token: token
+      },
+      headers: { // 同样，明确指定 Content-Type
+          'Content-Type': 'application/json'
+      },
+      skipAuth: true // 跳过拦截器自动添加的 Authorization 头
+  })
+  //return request.post(`/api/org/${orgId}/admins`, { adminIds })
 }
 
 // 搜索用户
-export const searchUsers = (query) => {
+export const searchUsers = (token,query) => {
   if (IS_DEV) {
     // 模拟数据
     return new Promise((resolve) => {
@@ -213,7 +273,20 @@ export const searchUsers = (query) => {
       }, 300)
     })
   }
-  return request.get('/api/users/search', { params: { q: query } })
+  return request.post('/api/users/search', 
+    { token },{
+    params: { q: query },
+    headers: {
+      'Content-Type': 'application/json' // 添加缺失的Content-Type头
+    }
+})
+  // })
+  // return request({
+  //     url: '/api/users/search',
+  //     method: 'post',
+  //     headers: {  Authorization: token },
+  //     params: { q: query }
+  //   })
 }
 
 // 邀请成员
@@ -230,7 +303,21 @@ export const inviteOrgMember = (orgId, userId) => {
       }, 400)
     })
   }
-  return request.post(`/api/org/${orgId}/invite`, { userId })
+  const userStore = useUserStore()
+  const token = userStore.token || localStorage.getItem('token')
+  return request({
+      method: 'post',
+      url: `/api/org/${orgId}/invite`,
+      data: { // 在 DELETE 请求中加入请求体
+        userId: userId,  
+        token: token
+      },
+      headers: { // 同样，明确指定 Content-Type
+          'Content-Type': 'application/json'
+      },
+      skipAuth: true // 跳过拦截器自动添加的 Authorization 头
+  })
+  //return request.post(`/api/org/${orgId}/invite`, { userId })
 }
 
 // 搜索组织
@@ -269,7 +356,21 @@ export const searchOrg = (orgId) => {
       }, 300)
     })
   }
-  return request.get(`/api/org/search`, { params: { id: orgId } })
+  const userStore = useUserStore()
+  const token = userStore.token || localStorage.getItem('token')
+  return request({
+      method: 'post',
+      url: `/api/org/search`,
+      params: { id: orgId }, // 使用 params 而不是 data
+      data: { // 在 请求中加入请求体 
+        token: token
+      },
+      headers: { // 同样，明确指定 Content-Type
+          'Content-Type': 'application/json'
+      },
+      skipAuth: true // 跳过拦截器自动添加的 Authorization 头
+  })
+  //return request.get(`/api/org/search`, { params: { id: orgId } })
 }
 
 // 申请加入组织
@@ -286,7 +387,22 @@ export const applyJoinOrg = (orgId, message) => {
       }, 500)
     })
   }
-  return request.post(`/api/org/join-request`, { orgId, message })
+   const userStore = useUserStore()
+  const token = userStore.token || localStorage.getItem('token')
+  return request({
+      method: 'post',
+      url: `/api/org/join-request`,
+      data: { // 在 请求中加入请求体
+        orgId: orgId,  
+        message: message,
+        token: token
+      },
+      headers: { // 同样，明确指定 Content-Type
+          'Content-Type': 'application/json'
+      },
+      skipAuth: true // 跳过拦截器自动添加的 Authorization 头
+  })
+  //return request.post(`/api/org/join-request`, { orgId, message })
 }
 
 // 获取收到的邀请
@@ -345,7 +461,20 @@ export const acceptInvitation = (invitationId) => {
       }, 400)
     })
   }
-  return request.post(`/api/invitation/${invitationId}/accept`)
+  const userStore = useUserStore()
+  const token = userStore.token || localStorage.getItem('token')
+  return request({
+      method: 'post',
+      url: `/api/invitation/${invitationId}/accept`,
+      data: { // 在 请求中加入请求体
+        token: token
+      },
+      headers: { // 同样，明确指定 Content-Type
+          'Content-Type': 'application/json'
+      },
+      skipAuth: true // 跳过拦截器自动添加的 Authorization 头
+  })
+  //return request.post(`/api/invitation/${invitationId}/accept`)
 }
 
 // 拒绝组织邀请
@@ -362,5 +491,18 @@ export const rejectInvitation = (invitationId) => {
       }, 300)
     })
   }
-  return request.post(`/api/invitation/${invitationId}/reject`)
+  const userStore = useUserStore()
+  const token = userStore.token || localStorage.getItem('token')
+  return request({
+      method: 'post',
+      url: `/api/invitation/${invitationId}/reject`,
+      data: { // 在 请求中加入请求体
+        token: token
+      },
+      headers: { // 同样，明确指定 Content-Type
+          'Content-Type': 'application/json'
+      },
+      skipAuth: true // 跳过拦截器自动添加的 Authorization 头
+  })
+  //return request.post(`/api/invitation/${invitationId}/reject`)
 }

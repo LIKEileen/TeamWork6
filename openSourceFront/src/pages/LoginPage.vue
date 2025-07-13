@@ -182,14 +182,16 @@ const handleLogin = async (type) => {
     // -------------------------
     try {
       const { data } = await login(payload)
-      if (data.code === 200) {
+      if (data && data.code === 1) {
         userStore.setUserInfo(data.data)
         ElMessage.success('登录成功')
         router.push('/dashboard')
       } else {
+        console.log(data)
         ElMessage.error(data.message || '登录失败')
       }
     } catch (err) {
+      console.log(err)
       ElMessage.error('网络错误或服务器异常')
     }
   })

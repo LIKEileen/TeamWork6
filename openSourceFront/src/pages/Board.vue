@@ -49,7 +49,9 @@ import dayjs from 'dayjs'
 
 import { getUserOrgs, getOrgHeatmap } from '@/api/org'
 import { lo } from 'element-plus/es/locale/index.mjs'
+import { useUserStore } from '@/store/user'
 
+const userStore = useUserStore()
 const baseColor = ref(localStorage.getItem('heatmap_color') || '#ff4d4f')
 const presetColors = ['#ff4d4f', '#409EFF', '#67C23A', '#E6A23C', '#909399']
 const allOrgs = ref([])
@@ -106,7 +108,8 @@ const electricResistorHeatmap = [
 ]
 
 const loadHeatmap = async () => {
-  const org = allOrgs.value.find(o => o.id === Number(selectedOrgId.value))
+  const org = allOrgs.value.find(o => o.id === selectedOrgId.value)
+  // console.log(allOrgs.value)
   if (!org) return
   localStorage.setItem('heatmap_selected_org', org.id)
   localStorage.setItem('heatmap_selected_org_name', org.name)
@@ -129,10 +132,16 @@ const loadHeatmap = async () => {
     }
   } else {
     try {
-      const { data: heatmapRes } = await getOrgHeatmap(org.id, dateRange.value)
+      // console.log(dateRange)
+      const { data: heatmapRes } = await getOrgHeatmap(
+        org.id, 
+        dayjs(dateRange.value[0]).format('YYYY-MM-DD'), 
+        dayjs(dateRange.value[1]).format('YYYY-MM-DD'), 
+        userStore.token)
+      // console.log(heatmapRes.data.heatmap)
       currentOrg.value = {
         ...org,
-        heatmap: heatmapRes.heatmap
+        heatmap: heatmapRes.data.heatmap
       }
     } catch (err) {
       console.error('热力图获取失败', err)
@@ -152,15 +161,21 @@ onMounted(async () => {
     await loadHeatmap()
   } else {
     try {
-      const { data: orgs } = await getUserOrgs()
-      allOrgs.value = orgs
+      const payload = {
+        token: userStore.token
+      }
+      const { data: orgs } = await getUserOrgs(userStore.token)
+      // console.log(orgs)
+      allOrgs.value = orgs.data
+      // console.log(allOrgs.value)
       const cachedId = localStorage.getItem('heatmap_selected_org')
       const cachedName = localStorage.getItem('heatmap_selected_org_name')
-      const fallbackOrg = orgs.find(org => org.id == cachedId) || orgs[0]
+      const fallbackOrg = orgs.data.find(org => org.id == cachedId) || orgs.data[0]
       selectedOrgId.value = fallbackOrg?.id || null;
       selectedOrgName.value = fallbackOrg?.name || null;
       currentOrg.value = allOrgs.value.find(org => org.name == selectedOrgName.value) || fallbackOrg
-      if (selectedOrgId.value) await loadHeatmap()
+      // if (selectedOrgId.value) await loadHeatmap()
+      await loadHeatmap()
     } catch (err) {
       console.error('组织列表获取失败', err)
     }

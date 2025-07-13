@@ -24,8 +24,8 @@
           />
           <el-button size="small" type="primary" @click="showAddEvent = true">添加事件</el-button>
           <el-button size="small" @click="showImportExcel = true">导入Excel</el-button>
-          <el-button size="small" @click="showImportSchool = true">学校课表导入</el-button>
-          <el-button size="small" @click="showAddRecurring = true">添加长期事件</el-button>
+          <!-- <el-button size="small" @click="showImportSchool = true">学校课表导入</el-button> -->
+          <!-- <el-button size="small" @click="showAddRecurring = true">添加长期事件</el-button> -->
         </div>
       </div>
 
@@ -99,7 +99,12 @@
 
       <!-- 弹窗：导入Excel -->
       <el-dialog v-model="showImportExcel" title="导入Excel" :close-on-click-modal="false">
-        <el-upload drag>
+        <el-upload
+          drag
+          :auto-upload="false"
+          :on-change="handleFileChange"
+          action="#" 
+        >
           <i class="el-icon-upload"></i>
           <div class="el-upload__text">拖拽文件到此或点击上传</div>
         </el-upload>
@@ -199,7 +204,7 @@
         <span></span>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item command="edit">编辑</el-dropdown-item>
+            <!-- <el-dropdown-item command="edit">编辑</el-dropdown-item> -->
             <el-dropdown-item command="delete">删除</el-dropdown-item>
           </el-dropdown-menu>
         </template>
@@ -211,6 +216,7 @@
 
 <script setup>
 import { ref, computed, nextTick, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import dayjs from 'dayjs'
 import {
   getUserScheduleApi,
@@ -221,16 +227,19 @@ import {
   importScheduleSchoolApi,
   addRecurringEventApi
 } from '@/api/user.js'
+import { useUserStore } from '@/store/user'
 
+const userStorage = useUserStore()
 onMounted(async () => {
   try {
-    const res = await getUserScheduleApi()
-    events.value = res.data || []
+    const res = await getUserScheduleApi(userStore.token)
+    events.value = res.data.data || []
   } catch (e) {
     console.error('获取日程失败：', e)
   }
 })
 
+const userStore = useUserStore()
 const baseColor = ref(localStorage.getItem('schedule_color') || '#409EFF')
 const presetColors = ['#409EFF', '#67C23A', '#F56C6C', '#E6A23C']
 
@@ -259,10 +268,19 @@ const events = ref([])
 
 const contextDropdown = ref(null)
 
+const selectedFile = ref(null)
+
+const handleFileChange = (file) => {
+  selectedFile.value = file.raw // 获取原始 File 对象
+}
+
 const confirmAddEvent = async () => {
   try {
+    const dateOnly = new Date(addEventForm.value.date).toISOString().slice(0, 10)
     const payload = {
       ...addEventForm.value,
+      token: userStore.token,
+      date: dateOnly,
       start: dayjs(addEventForm.value.start).format('HH:mm'),
       end: dayjs(addEventForm.value.end).format('HH:mm')
     }
@@ -306,11 +324,20 @@ const confirmDeleteEvent = async () => {
 }
 
 const confirmImportExcel = async () => {
+  if (!selectedFile.value) {
+    ElMessage.error('请先选择要上传的文件')
+    return
+  }
   try {
-    await importScheduleExcelApi()
+    console.log(selectedFile.value)
+    const token = userStore.token // 或使用 store 中的 token
+    await importScheduleExcelApi(token, selectedFile.value)
+    ElMessage.success('导入成功')
     showImportExcel.value = false
+    selectedFile.value = null // 清空已选择的文件
   } catch (e) {
     console.error('导入 Excel 失败：', e)
+    ElMessage.error('导入失败，请检查文件格式或网络连接')
   }
 }
 
@@ -377,6 +404,7 @@ const gridColumnStyle = computed(() => {
 
 const getEventsAt = (dayLabel, time) => {
   const fullDate = dateRangeToFull(dayLabel)
+  // console.log('events.value =', events.value)
   return events.value.filter(evt => evt.day === fullDate && evt.start === time)
 }
 
